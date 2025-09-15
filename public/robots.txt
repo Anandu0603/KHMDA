@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Replace https://www.your-kmda-website.com with your actual domain
+Sitemap: https://www.your-kmda-website.com/sitemap.xml

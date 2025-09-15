@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Replace https://www.your-kmda-website.com with your actual domain -->
+  <url>
+    <loc>https://www.your-kmda-website.com/</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/about</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/vision-mission</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/committee</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/membership</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/news</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/contact</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://www.your-kmda-website.com/register</loc>
+    <lastmod>2025-01-01</lastmod>
+    <priority>0.90</priority>
+  </url>
+</urlset>

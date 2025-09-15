@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "lib": ["esnext"],
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["https://deno.land/std@0.168.0/node/crypto.d.ts", "https://deno.land/x/deno@v1.37.2/lib.deno.d.ts"]
+  },
+  "include": [
+    "supabase/functions/**/*.ts"
+  ]
+}
