@@ -97,8 +97,13 @@ export default function RazorpayPayment() {
 
       setStatusText('Redirecting to Razorpay...');
 
+      const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
+      if (!keyId) {
+        throw new Error('API keys are not configured: VITE_RAZORPAY_KEY_ID is missing in your .env file.');
+      }
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_your_key_here',
+        key: keyId,
         amount: Math.round(paymentData.amount * 100),
         currency: 'INR',
         name: 'KMDA Membership',
@@ -113,13 +118,22 @@ export default function RazorpayPayment() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
+                member_id: paymentData.memberId,
               },
             });
 
             if (verificationError || !verificationData || verificationData.status !== 'success') {
               let detailedVerificationError = 'Payment verification failed on server.';
-              if (verificationError?.message) {
-                detailedVerificationError = verificationError.message;
+              if (verificationError) {
+                detailedVerificationError = verificationError.message || detailedVerificationError;
+                // Try to read body from context for more details
+                const ctx: any = (verificationError as any).context;
+                if (ctx && typeof ctx.json === 'function') {
+                  try {
+                    const body = await ctx.json();
+                    if (body?.error) detailedVerificationError = body.error;
+                  } catch {}
+                }
               } else if (verificationData?.error) {
                 detailedVerificationError = verificationData.error;
               }
@@ -128,8 +142,7 @@ export default function RazorpayPayment() {
             }
 
             console.log('Payment verified successfully');
-            
-            await updateDatabaseOnSuccess(response.razorpay_payment_id, response.razorpay_order_id);
+            // Database updates are handled server-side in the verification function
             
             // Clear session storage
             sessionStorage.removeItem('paymentData');

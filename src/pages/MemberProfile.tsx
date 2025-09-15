@@ -44,6 +44,7 @@ export default function MemberProfile() {
   const [member, setMember] = useState<any>(null);
   const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -94,6 +95,47 @@ export default function MemberProfile() {
     }
   };
 
+  const handleGenerateCertificate = async () => {
+    if (!member) return;
+    try {
+      setGenerating(true);
+      const certificateNumber = member.membership_id || `KMDA${new Date().getFullYear()}${Math.floor(Math.random()*10000).toString().padStart(4,'0')}`;
+      const validUntil = member.expiry_date || new Date(new Date().setFullYear(new Date().getFullYear()+1)).toISOString();
+
+      const { error } = await supabase.functions.invoke('generate-certificate', {
+        body: {
+          member_id: member.id,
+          certificate_number: certificateNumber,
+          valid_until: validUntil,
+        },
+      });
+
+      if (error) throw error;
+
+      addToast('Certificate generated successfully.', 'success');
+
+      // Poll for the record to appear (eventual consistency)
+      for (let i = 0; i < 6; i++) {
+        const { data: certData } = await supabase
+          .from('certificates')
+          .select('pdf_url')
+          .eq('member_id', member.id)
+          .order('generated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (certData?.pdf_url) {
+          setCertificateUrl(certData.pdf_url);
+          break;
+        }
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    } catch (err: any) {
+      addToast(`Failed to generate certificate: ${err.message || err}`, 'error');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -123,8 +165,17 @@ export default function MemberProfile() {
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">Member since {new Date(member.created_at).toLocaleDateString('en-IN')}</p>
               </div>
-              <div className="mt-4 flex md:mt-0 md:ml-4">
+              <div className="mt-4 flex md:mt-0 md:ml-4 items-center space-x-3">
                 <StatusBadge status={member.status} expiryDate={member.expiry_date} />
+                {isAdmin && member.status === 'approved' && (
+                  <button
+                    onClick={handleGenerateCertificate}
+                    disabled={generating}
+                    className="px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {generating ? 'Generating…' : 'Generate Certificate'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -39,7 +39,7 @@ export default function Header() {
             </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-4 lg:space-x-6">
             {navLinks.map(link => (
               <Link
                 key={link.name}
@@ -55,14 +55,19 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {user ? (
               <>
                 {isAdmin ? (
-                  <Link to="/admin/dashboard" className="flex items-center space-x-1 text-sm font-medium text-gray-600 hover:text-emerald-700 transition-colors">
-                    <Settings className="h-4 w-4" />
-                    <span>Dashboard</span>
-                  </Link>
+                  <div className="flex items-center space-x-4">
+                    <Link to="/admin/dashboard" className="flex items-center space-x-1 text-sm font-medium text-gray-600 hover:text-emerald-700 transition-colors">
+                      <Settings className="h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                    <Link to="/admin/reports" className="flex items-center space-x-1 text-sm font-medium text-gray-600 hover:text-emerald-700 transition-colors">
+                      <span>Reports</span>
+                    </Link>
+                  </div>
                 ) : (
                   <Link to="/member/profile" className="flex items-center space-x-1 text-sm font-medium text-gray-600 hover:text-emerald-700 transition-colors">
                     <User className="h-4 w-4" />
@@ -86,8 +91,8 @@ export default function Header() {
             )}
           </div>
 
-          <div className="lg:hidden">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2">
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
@@ -96,7 +101,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-200">
+        <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {navLinks.map(link => (
               <Link
@@ -118,10 +123,15 @@ export default function Header() {
               {user ? (
                 <div className="flex items-center space-x-4">
                   {isAdmin ? (
-                    <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-1 text-base font-medium text-gray-700 hover:text-gray-900">
-                      <Settings className="h-5 w-5" />
-                      <span>Dashboard</span>
-                    </Link>
+                    <>
+                      <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-1 text-base font-medium text-gray-700 hover:text-gray-900">
+                        <Settings className="h-5 w-5" />
+                        <span>Dashboard</span>
+                      </Link>
+                      <Link to="/admin/reports" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-1 text-base font-medium text-gray-700 hover:text-gray-900">
+                        <span>Reports</span>
+                      </Link>
+                    </>
                   ) : (
                     <Link to="/member/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-1 text-base font-medium text-gray-700 hover:text-gray-900">
                       <User className="h-5 w-5" />

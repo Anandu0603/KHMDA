@@ -263,7 +263,7 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Manage KMDA membership applications and renewals</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatCard icon={Users} title="Total Members" value={stats.total} colorClass={{bg: 'bg-blue-100', text: 'text-blue-600'}} />
           <StatCard icon={Clock} title="Pending" value={stats.pending} colorClass={{bg: 'bg-yellow-100', text: 'text-yellow-600'}} />
           <StatCard icon={CheckCircle} title="Approved" value={stats.approved} colorClass={{bg: 'bg-green-100', text: 'text-green-600'}} />
@@ -284,40 +284,111 @@ export default function AdminDashboard() {
             {loading ? (
               <div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-700 mx-auto"></div></div>
             ) : (
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+              <>
+                {/* Desktop Table */}
+                <div className="hidden lg:block">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredMembers.map(member => (
+                        <tr key={member.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{member.company_name}</div>
+                            <div className="text-sm text-gray-500">{new Date(member.created_at).toLocaleDateString()}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{member.contact_person}</div>
+                            <div className="text-sm text-gray-500">{member.email}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.district}, {member.city}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+                              member.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              member.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              member.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-orange-100 text-orange-800'
+                            }`}>{member.status === 'approved' && member.expiry_date && new Date(member.expiry_date) < new Date() ? 'Expired' : member.status}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-4">
+                              <Link to={`/admin/member/${member.id}`} className="text-gray-400 hover:text-blue-600" title="View Details">
+                                <Eye size={18} />
+                              </Link>
+                              {member.status === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => updateMemberStatus(member.id, 'approved')}
+                                    disabled={!!processingId}
+                                    className="text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Approve Member"
+                                  >
+                                    {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
+                                  </button>
+                                  <button
+                                    onClick={() => updateMemberStatus(member.id, 'rejected')}
+                                    disabled={!!processingId}
+                                    className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Reject Member"
+                                  >
+                                    {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <X size={18} />}
+                                  </button>
+                                </>
+                              )}
+                              {member.status === 'approved' && member.expiry_date && new Date(member.expiry_date) < new Date() && (
+                                <button
+                                  onClick={() => renewMembership(member.id)}
+                                  disabled={!!processingId}
+                                  className="text-gray-400 hover:text-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                  title="Renew Membership"
+                                >
+                                  {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="lg:hidden space-y-4 p-4">
                   {filteredMembers.map(member => (
-                    <tr key={member.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{member.company_name}</div>
-                        <div className="text-sm text-gray-500">{new Date(member.created_at).toLocaleDateString()}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{member.contact_person}</div>
-                        <div className="text-sm text-gray-500">{member.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.district}, {member.city}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
+                    <div key={member.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 text-sm">{member.company_name}</h3>
+                          <p className="text-xs text-gray-500">{member.contact_person}</p>
+                          <p className="text-xs text-gray-500">{member.email}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                           member.status === 'approved' ? 'bg-green-100 text-green-800' :
                           member.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           member.status === 'rejected' ? 'bg-red-100 text-red-800' :
                           'bg-orange-100 text-orange-800'
-                        }`}>{member.status === 'approved' && member.expiry_date && new Date(member.expiry_date) < new Date() ? 'Expired' : member.status}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-4">
+                        }`}>
+                          {member.status === 'approved' && member.expiry_date && new Date(member.expiry_date) < new Date() ? 'Expired' : member.status}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 mb-3">
+                        {member.district}, {member.city}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500">
+                          {new Date(member.created_at).toLocaleDateString()}
+                        </span>
+                        <div className="flex items-center space-x-3">
                           <Link to={`/admin/member/${member.id}`} className="text-gray-400 hover:text-blue-600" title="View Details">
-                            <Eye size={18} />
+                            <Eye size={16} />
                           </Link>
                           {member.status === 'pending' && (
                             <>
@@ -327,7 +398,7 @@ export default function AdminDashboard() {
                                 className="text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Approve Member"
                               >
-                                {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
+                                {processingId === member.id ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                               </button>
                               <button
                                 onClick={() => updateMemberStatus(member.id, 'rejected')}
@@ -335,7 +406,7 @@ export default function AdminDashboard() {
                                 className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Reject Member"
                               >
-                                {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <X size={18} />}
+                                {processingId === member.id ? <Loader2 className="animate-spin" size={16} /> : <X size={16} />}
                               </button>
                             </>
                           )}
@@ -346,15 +417,15 @@ export default function AdminDashboard() {
                               className="text-gray-400 hover:text-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                               title="Renew Membership"
                             >
-                              {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+                              {processingId === member.id ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
                             </button>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>

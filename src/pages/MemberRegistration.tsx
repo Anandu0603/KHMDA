@@ -326,35 +326,35 @@ export default function MemberRegistration() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Join KMDA</h1>
-            <p className="text-gray-600">Register as a member of Kerala Medical Distributors Association</p>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Join KMDA</h1>
+            <p className="text-sm sm:text-base text-gray-600">Register as a member of Kerala Medical Distributors Association</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Building2 className="h-5 w-5 mr-2 text-emerald-700" />
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-emerald-700" />
                 Company Information
               </h2>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
-                <input type="text" name="companyName" required value={formData.companyName} onChange={handleChange} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${errors.companyName ? 'border-red-500' : 'border-gray-300'}`} />
-                {errors.companyName && <p className="text-red-500 text-sm mt-1">{errors.companyName}</p>}
+                <input type="text" name="companyName" required value={formData.companyName} onChange={handleChange} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm sm:text-base ${errors.companyName ? 'border-red-500' : 'border-gray-300'}`} />
+                {errors.companyName && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.companyName}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person Name *</label>
-                <input type="text" name="contactPerson" required value={formData.contactPerson} onChange={handleChange} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${errors.contactPerson ? 'border-red-500' : 'border-gray-300'}`} />
-                {errors.contactPerson && <p className="text-red-500 text-sm mt-1">{errors.contactPerson}</p>}
+                <input type="text" name="contactPerson" required value={formData.contactPerson} onChange={handleChange} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm sm:text-base ${errors.contactPerson ? 'border-red-500' : 'border-gray-300'}`} />
+                {errors.contactPerson && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.contactPerson}</p>}
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center"><Phone className="h-5 w-5 mr-2 text-emerald-700" />Contact Information</h2>
-              <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center"><Phone className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-emerald-700" />Contact Information</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
                   <input type="tel" name="mobile" required value={formData.mobile} onChange={handleChange} className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors ${errors.mobile ? 'border-red-500' : 'border-gray-300'}`} />
