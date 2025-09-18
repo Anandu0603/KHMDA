@@ -16,6 +16,7 @@ import ContactPage from './pages/ContactPage';
 import MemberRegistration from './pages/MemberRegistration';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminMemberDetails from './pages/AdminMemberDetails';
 import MemberProfile from './pages/MemberProfile';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PaymentCancel from './pages/PaymentCancel';
@@ -51,7 +52,7 @@ function App() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/reports" element={<ReportsPage />} />
-                <Route path="/admin/member/:id" element={<MemberProfile />} />
+                <Route path="/admin/member/:id" element={<AdminMemberDetails />} />
                 <Route path="/member/profile" element={<MemberProfile />} />
                 <Route path="/member/renew" element={<RenewalPage />} />
                 

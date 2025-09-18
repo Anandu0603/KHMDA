@@ -88,6 +88,7 @@ export default function ReportsPage() {
       // Donation analysis
       const donationDistribution: { [key: string]: number } = {};
       const donorMap = new Map();
+      const allDonationRecords: any[] = [];
       
       payments?.forEach(payment => {
         if (payment.donation_amount && payment.donation_amount > 0) {
@@ -102,6 +103,14 @@ export default function ReportsPage() {
             existing.donationCount += 1;
             donorMap.set(member.id, existing);
           }
+    
+          // Add to all donation records for export
+          allDonationRecords.push({
+            member,
+            payment,
+            donationAmount: payment.donation_amount,
+            paymentDate: new Date(payment.created_at).toLocaleDateString('en-IN')
+          });
         }
       });
 
@@ -239,7 +248,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button onClick={() => exportToCsv('KMDA_Members_Report.csv', ['Company Name', 'Email', 'Mobile', 'District', 'Status', 'Member ID', 'Registration Date'], reportData?.members || [], m => [m.company_name, m.email, m.mobile, m.district, m.status, m.member_id || '', new Date(m.created_at).toLocaleDateString('en-IN')])} disabled={!reportData || loading} className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Members</button>
               <button onClick={() => exportToCsv('KMDA_Payments_Report.csv', ['Member ID', 'Amount', 'Membership Fee', 'Gateway Charges', 'Donation Amount', 'Payment Type', 'Status', 'Payment Date'], reportData?.payments || [], p => [p.member_id, p.amount, p.membership_fee, p.gateway_charges, p.donation_amount || 0, p.payment_type, p.status, new Date(p.created_at).toLocaleDateString('en-IN')])} disabled={!reportData || loading} className="bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Payments</button>
-              <button onClick={() => exportToCsv('KMDA_Donations_Report.csv', ['Company Name', 'Contact Person', 'Email', 'Total Donated', 'Donation Count', 'Last Donation Date'], reportData?.topDonors || [], d => [d.member.company_name, d.member.contact_person, d.member.email, d.totalDonated, d.donationCount, new Date().toLocaleDateString('en-IN')])} disabled={!reportData || loading} className="bg-amber-700 hover:bg-amber-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Donations</button>
+              <button onClick={() => exportToCsv('KMDA_Donations_Report.csv', ['Company Name', 'Contact Person', 'Email', 'Donation Amount', 'Payment Date'], reportData?.allDonationRecords || [], d => [d.member.company_name, d.member.contact_person, d.member.email, d.donationAmount, d.paymentDate])} disabled={!reportData || loading} className="bg-amber-700 hover:bg-amber-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Donations</button>
             </div>
           </div>
         </div>

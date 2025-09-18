@@ -322,26 +322,6 @@ export default function AdminDashboard() {
                               <Link to={`/admin/member/${member.id}`} className="text-gray-400 hover:text-blue-600" title="View Details">
                                 <Eye size={18} />
                               </Link>
-                              {member.status === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={() => updateMemberStatus(member.id, 'approved')}
-                                    disabled={!!processingId}
-                                    className="text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Approve Member"
-                                  >
-                                    {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <Check size={18} />}
-                                  </button>
-                                  <button
-                                    onClick={() => updateMemberStatus(member.id, 'rejected')}
-                                    disabled={!!processingId}
-                                    className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Reject Member"
-                                  >
-                                    {processingId === member.id ? <Loader2 className="animate-spin" size={18} /> : <X size={18} />}
-                                  </button>
-                                </>
-                              )}
                               {member.status === 'approved' && member.expiry_date && new Date(member.expiry_date) < new Date() && (
                                 <button
                                   onClick={() => renewMembership(member.id)}
@@ -390,26 +370,6 @@ export default function AdminDashboard() {
                           <Link to={`/admin/member/${member.id}`} className="text-gray-400 hover:text-blue-600" title="View Details">
                             <Eye size={16} />
                           </Link>
-                          {member.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => updateMemberStatus(member.id, 'approved')}
-                                disabled={!!processingId}
-                                className="text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Approve Member"
-                              >
-                                {processingId === member.id ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
-                              </button>
-                              <button
-                                onClick={() => updateMemberStatus(member.id, 'rejected')}
-                                disabled={!!processingId}
-                                className="text-gray-400 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Reject Member"
-                              >
-                                {processingId === member.id ? <Loader2 className="animate-spin" size={16} /> : <X size={16} />}
-                              </button>
-                            </>
-                          )}
                           {member.status === 'approved' && member.expiry_date && new Date(member.expiry_date) < new Date() && (
                             <button
                               onClick={() => renewMembership(member.id)}
