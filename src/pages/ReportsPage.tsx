@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
-import { Navigate } from 'react-router-dom';
-import { BarChart3, Download, Calendar, IndianRupee, Users, AlertTriangle, Loader2 } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
+import { BarChart3, Download, Calendar, IndianRupee, Users, AlertTriangle, Loader2, FileSpreadsheet } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 
 interface ReportData {
@@ -237,19 +237,18 @@ export default function ReportsPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex flex-col gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1"><Calendar className="h-4 w-4 inline mr-1" />Date Range</label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input type="date" value={dateRange.startDate} onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
-                <span className="py-2 text-gray-500 text-center sm:text-left">to</span>
-                <input type="date" value={dateRange.endDate} onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
-              </div>
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button onClick={() => exportToCsv('KMDA_Members_Report.csv', ['Company Name', 'Email', 'Mobile', 'District', 'Status', 'Member ID', 'Registration Date'], reportData?.members || [], m => [m.company_name, m.email, m.mobile, m.district, m.status, m.member_id || '', new Date(m.created_at).toLocaleDateString('en-IN')])} disabled={!reportData || loading} className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Members</button>
-              <button onClick={() => exportToCsv('KMDA_Payments_Report.csv', ['Member ID', 'Amount', 'Membership Fee', 'Gateway Charges', 'Donation Amount', 'Payment Type', 'Status', 'Payment Date'], reportData?.payments || [], p => [p.member_id, p.amount, p.membership_fee, p.gateway_charges, p.donation_amount || 0, p.payment_type, p.status, new Date(p.created_at).toLocaleDateString('en-IN')])} disabled={!reportData || loading} className="bg-blue-700 hover:bg-blue-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Payments</button>
-              <button onClick={() => exportToCsv('KMDA_Donations_Report.csv', ['Company Name', 'Contact Person', 'Email', 'Donation Amount', 'Payment Date'], reportData?.allDonationRecords || [], d => [d.member.company_name, d.member.contact_person, d.member.email, d.donationAmount, d.paymentDate])} disabled={!reportData || loading} className="bg-amber-700 hover:bg-amber-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center text-sm"><Download className="h-4 w-4 mr-2" />Export Donations</button>
+              <Link to="/admin/reports/members" className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center text-sm">
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> Members
+              </Link>
+              <Link to="/admin/reports/payments" className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center text-sm">
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> Payments
+              </Link>
+              <Link to="/admin/reports/donations" className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center text-sm">
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> Donations
+              </Link>
             </div>
+            <p className="text-sm text-gray-600">Select a report to view data with date range filters and export as CSV.</p>
           </div>
         </div>
 

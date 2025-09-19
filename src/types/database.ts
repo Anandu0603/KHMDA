@@ -32,7 +32,7 @@ export interface Payment {
   gateway_charges: number;
   donation_amount: number;
   status: 'pending' | 'completed' | 'failed';
-  payment_type: 'registration' | 'renewal';
+  payment_type: 'registration' | 'renewal' | 'donation';
   payment_gateway: 'razorpay' | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
@@ -54,4 +54,18 @@ export interface Certificate {
   valid_until: string;
   generated_at: string;
   created_at: string;
+}
+
+export interface Donation {
+  id: string;
+  donor_name: string | null;
+  phone: string | null;
+  email: string | null;
+  amount: number;
+  remarks: string | null;
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  razorpay_order_id: string | null;
+  razorpay_payment_id: string | null;
+  created_at: string;
+  updated_at: string;
 }

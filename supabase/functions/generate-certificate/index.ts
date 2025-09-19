@@ -1,5 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { corsHeaders } from '../_shared/cors.ts';
+// Inlined CORS headers to avoid external _shared dependency in Dashboard deployments
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Initialize Supabase client with service role key
@@ -130,158 +135,227 @@ async function generateCertificatePDF(data: {
 
     // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Add a page
-    const page = pdfDoc.addPage([595, 842]); // A4 size
+    // Add a page (A4)
+    const page = pdfDoc.addPage([595, 842]);
     const { width, height } = page.getSize();
 
-    // Background color
+    // Helpers
+    const centerX = (text: string, size: number, font = regularFont) =>
+      (width - font.widthOfTextAtSize(text, size)) / 2;
+
+    const formatLongDate = (iso: string) =>
+      new Date(iso).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+    // Background - cream/off-white
+    page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 0.98, 0.95) });
+
+    // Border - gold
+    const borderColor = rgb(1, 0.84, 0);
     page.drawRectangle({
-      x: 0,
-      y: 0,
-      width: width,
-      height: height,
-      color: rgb(0.95, 0.95, 0.95),
+      x: 20, y: 20, width: width - 40, height: height - 40,
+      color: borderColor, opacity: 0.1
+    });
+    page.drawRectangle({
+      x: 20, y: 20, width: width - 40, height: 5,
+      color: borderColor
+    });
+    page.drawRectangle({
+      x: 20, y: height - 25, width: width - 40, height: 5,
+      color: borderColor
+    });
+    page.drawRectangle({
+      x: 20, y: 20, width: 5, height: height - 40,
+      color: borderColor
+    });
+    page.drawRectangle({
+      x: width - 25, y: 20, width: 5, height: height - 40,
+      color: borderColor
     });
 
-    // Title
-    page.drawText('KERALA MEDICAL DISTRIBUTORS ASSOCIATION', {
-      x: 50,
-      y: height - 100,
-      size: 24,
-      font: font,
-      color: rgb(0.02, 0.78, 0.55), // Emerald color
+    // Header with blue color
+    const blueColor = rgb(0, 0.4, 0.8);
+    const title1 = 'KERALA MEDICAL DISTRIBUTORS ASSOCIATION';
+    const title2 = '(KMDA)';
+    const title3 = 'CERTIFICATE OF REGISTRATION';
+
+    // Association logo - simple medical cross
+    page.drawRectangle({
+      x: 80, y: height - 70, width: 30, height: 30,
+      color: blueColor
+    });
+    const whiteColor = rgb(1, 1, 1);
+    page.drawLine({
+      start: { x: 95, y: height - 85 }, end: { x: 95, y: height - 55 },
+      thickness: 4, color: whiteColor
+    });
+    page.drawLine({
+      start: { x: 65, y: height - 70 }, end: { x: 125, y: height - 70 },
+      thickness: 4, color: whiteColor
     });
 
-    page.drawText('MEMBERSHIP CERTIFICATE', {
-      x: 50,
+    page.drawText(title1, {
+      x: centerX(title1, 22, boldFont),
+      y: height - 80,
+      size: 22,
+      font: boldFont,
+      color: blueColor,
+    });
+
+    page.drawText(title2, {
+      x: centerX(title2, 14, regularFont),
+      y: height - 105,
+      size: 14,
+      font: regularFont,
+      color: blueColor,
+    });
+
+    page.drawText(title3, {
+      x: centerX(title3, 18, boldFont),
       y: height - 130,
       size: 18,
-      font: font,
+      font: boldFont,
       color: rgb(0, 0, 0),
     });
 
-    // Certificate number
-    page.drawText(`Certificate No: ${data.certificateNumber}`, {
-      x: 50,
-      y: height - 160,
+    // Decorative divider - blue ribbon style
+    page.drawRectangle({
+      x: 60, y: height - 145, width: width - 120, height: 8,
+      color: blueColor, opacity: 0.8
+    });
+    page.drawRectangle({
+      x: 60, y: height - 147, width: width - 120, height: 4,
+      color: rgb(1, 1, 1), opacity: 0.9
+    });
+
+    // Body
+    const line1 = 'This is to certify that';
+    page.drawText(line1, {
+      x: centerX(line1, 14, regularFont),
+      y: height - 175,
+      size: 14,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Company name with bullet
+    const companySize = 16;
+    const companyText = data.companyName;
+    const companyTextWidth = boldFont.widthOfTextAtSize(companyText, companySize);
+    const companyX = (width - companyTextWidth) / 2;
+    // Blue diamond/circle bullet
+    page.drawCircle({ x: companyX - 10, y: height - 231, size: 4, color: blueColor });
+    page.drawText(companyText, {
+      x: companyX,
+      y: height - 235,
+      size: companySize,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+
+    const line2 = 'is a registered member of the KMDA';
+    page.drawText(line2, {
+      x: centerX(line2, 14, regularFont),
+      y: height - 265,
+      size: 14,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Registration details with blue banners
+    page.drawRectangle({
+      x: 100, y: height - 285, width: width - 200, height: 20,
+      color: blueColor, opacity: 0.1
+    });
+    const regText = `Registration Number: ${data.certificateNumber}`;
+    page.drawText(regText, {
+      x: centerX(regText, 12, regularFont),
+      y: height - 300,
       size: 12,
       font: regularFont,
-      color: rgb(0.5, 0.5, 0.5),
+      color: blueColor,
     });
 
-    // Main content
-    const textY = height - 220;
-    page.drawText('This is to certify that', {
-      x: 50,
-      y: textY,
-      size: 14,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
-
-    page.drawText(`${data.memberName}`, {
-      x: 50,
-      y: textY - 25,
-      size: 16,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-
-    page.drawText(`of ${data.companyName}`, {
-      x: 50,
-      y: textY - 50,
-      size: 14,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
-
-    page.drawText(`from ${data.city}, ${data.district} District, Kerala`, {
-      x: 50,
-      y: textY - 75,
-      size: 12,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
-
-    // Membership details
-    page.drawText('has been admitted as a Member of the', {
-      x: 50,
-      y: textY - 110,
-      size: 14,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
-
-    page.drawText('KERALA MEDICAL DISTRIBUTORS ASSOCIATION (KMDA)', {
-      x: 50,
-      y: textY - 135,
-      size: 14,
-      font: font,
-      color: rgb(0.02, 0.78, 0.55),
-    });
-
-    // Validity period
-    const issueDate = new Date(data.issueDate);
-    const validUntilDate = new Date(data.validUntil);
+    // Dates with ribbon banners
+    const doi = `Date of Issue: ${formatLongDate(data.issueDate)}`;
+    const doe = `Expiry Date: ${formatLongDate(data.validUntil)}`;
     
-    page.drawText('This membership is valid from', {
-      x: 50,
-      y: textY - 170,
+    // Issue date banner
+    page.drawRectangle({
+      x: 80, y: height - 320, width: width - 160, height: 18,
+      color: borderColor, opacity: 0.3
+    });
+    page.drawText(doi, {
+      x: centerX(doi, 12, regularFont),
+      y: height - 325,
+      size: 12,
+      font: regularFont,
+      color: rgb(0, 0, 0),
+    });
+    
+    // Expiry date banner
+    page.drawRectangle({
+      x: 80, y: height - 350, width: width - 160, height: 18,
+      color: borderColor, opacity: 0.3
+    });
+    page.drawText(doe, {
+      x: centerX(doe, 12, regularFont),
+      y: height - 345,
       size: 12,
       font: regularFont,
       color: rgb(0, 0, 0),
     });
 
-    page.drawText(`${issueDate.toLocaleDateString('en-IN')} to ${validUntilDate.toLocaleDateString('en-IN')}`, {
-      x: 50,
-      y: textY - 195,
-      size: 12,
-      font: font,
-      color: rgb(0, 0, 0),
+    // Paragraph
+    const p1 = 'This certificate confirms the validity of';
+    const p2 = 'membership and all associated rights and';
+    const p3 = 'privileges until the expiry date.';
+    page.drawText(p1, { x: centerX(p1, 12, regularFont), y: height - 380, size: 12, font: regularFont, color: rgb(0,0,0) });
+    page.drawText(p2, { x: centerX(p2, 12, regularFont), y: height - 400, size: 12, font: regularFont, color: rgb(0,0,0) });
+    page.drawText(p3, { x: centerX(p3, 12, regularFont), y: height - 420, size: 12, font: regularFont, color: rgb(0,0,0) });
+
+    // Seals and signature
+    // Left seal - KMDA logo
+    page.drawCircle({
+      x: 120, y: 120, size: 40,
+      color: blueColor, opacity: 0.2
+    });
+    page.drawText('KMDA', {
+      x: 120, y: 125,
+      size: 10, font: boldFont, color: blueColor
     });
 
-    // Contact information
-    page.drawText(`Email: ${data.email}`, {
-      x: 50,
-      y: textY - 230,
-      size: 10,
-      font: regularFont,
-      color: rgb(0.5, 0.5, 0.5),
+    // Right seal
+    page.drawCircle({
+      x: width - 120, y: 120, size: 40,
+      color: borderColor, opacity: 0.3
+    });
+    page.drawText('SEAL', {
+      x: width - 120, y: 125,
+      size: 8, font: regularFont, color: rgb(0,0,0)
     });
 
-    // Footer
-    page.drawText('Issued by KMDA Administration', {
-      x: 50,
-      y: 80,
-      size: 10,
-      font: regularFont,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+    // Signature line
+    const sigY = 100;
+    const lineWidth = 220;
+    const lineStartX = (width - lineWidth) / 2;
+    page.drawLine({ start: { x: lineStartX, y: sigY }, end: { x: lineStartX + lineWidth, y: sigY }, thickness: 1, color: rgb(0, 0, 0) });
+    const sigText = 'President, KMDA';
+    page.drawText(sigText, { x: centerX(sigText, 12, regularFont), y: sigY - 18, size: 12, font: regularFont, color: rgb(0, 0, 0) });
 
-    page.drawText(`Date of Issue: ${issueDate.toLocaleDateString('en-IN')}`, {
-      x: 50,
-      y: 60,
-      size: 10,
-      font: regularFont,
-      color: rgb(0.5, 0.5, 0.5),
-    });
-
-    // Decorative line
-    page.drawLine({
-      start: { x: 50, y: height - 250 },
-      end: { x: width - 50, y: height - 250 },
-      thickness: 1,
-      color: rgb(0.02, 0.78, 0.55),
-    });
+    // Date below signature
+    const sigDate = `Date: ${formatLongDate(data.issueDate)}`;
+    page.drawText(sigDate, { x: centerX(sigDate, 10, regularFont), y: sigY - 35, size: 10, font: regularFont, color: rgb(0.3, 0.3, 0.3) });
 
     // Serialize the PDF
     const pdfBytes = await pdfDoc.save();
-
     return pdfBytes;
-
   } catch (error) {
     throw new Error(`Failed to generate PDF certificate: ${error.message}`);
   }

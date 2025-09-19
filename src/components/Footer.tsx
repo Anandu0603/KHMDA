@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Facebook, Twitter, Linkedin } from 'lucide-react';
+import { Facebook, Twitter, Linkedin } from 'lucide-react';
+import Logo from './Logo';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
@@ -12,9 +13,7 @@ const Footer: React.FC = () => {
           {/* About Section */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center space-x-3 mb-3 sm:mb-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-700 rounded-lg flex items-center justify-center">
-                <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-              </div>
+              <Logo className="w-8 h-8 sm:w-10 sm:h-10" />
               <h2 className="text-lg sm:text-xl font-bold">KMDA</h2>
             </div>
             <p className="text-gray-400 text-xs sm:text-sm">
@@ -59,7 +58,7 @@ const Footer: React.FC = () => {
           </p>
           <div className="text-center">
             <p className="text-gray-500 text-xs sm:text-sm">
-              Powered by <span className="text-emerald-400 font-medium">Streams Max Technologies Pvt Ltd</span>
+            Technology Partner <a href="https://streamsmax.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 font-medium hover:underline">Streams Max Technologies Pvt Ltd</a>
             </p>
           </div>
           <div className="flex space-x-3 sm:space-x-4">

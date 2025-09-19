@@ -65,53 +65,80 @@ serve(async (req) => {
       });
     }
 
-    // Optionally update DB on server side to avoid client RLS issues
-    if (SUPABASE_URL && SERVICE_ROLE_KEY && member_id) {
-      try {
-        const resp = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SERVICE_ROLE_KEY,
-            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            'Prefer': 'return=minimal',
-          },
-          body: JSON.stringify({
-            status: 'completed',
-            razorpay_payment_id,
-            razorpay_order_id,
-          }),
-        });
-        // Filter to the correct pending record via query params
-        // Note: Using PostgREST conditional headers is not available in body; use URL params with eq filters
-        // Since fetch above cannot add query, perform a second call with query parameters
-      } catch (_) {
-        // best-effort, ignore
-      }
+   // Optionally update DB on server side to avoid client RLS issues
+   if (SUPABASE_URL && SERVICE_ROLE_KEY) {
+     if (member_id) {
+       try {
+         const resp = await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+           method: 'PATCH',
+           headers: {
+             'Content-Type': 'application/json',
+             'apikey': SERVICE_ROLE_KEY,
+             'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+             'Prefer': 'return=minimal',
+           },
+           body: JSON.stringify({
+             status: 'completed',
+             razorpay_payment_id,
+             razorpay_order_id,
+           }),
+         });
+         // Filter to the correct pending record via query params
+         // Note: Using PostgREST conditional headers is not available in body; use URL params with eq filters
+         // Since fetch above cannot add query, perform a second call with query parameters
+       } catch (_) {
+         // best-effort, ignore
+       }
 
-      try {
-        const url = new URL(`${SUPABASE_URL}/rest/v1/payments`);
-        url.searchParams.set('member_id', `eq.${member_id}`);
-        url.searchParams.set('status', 'eq.pending');
-        url.searchParams.set('select', 'id');
+       try {
+         const url = new URL(`${SUPABASE_URL}/rest/v1/payments`);
+         url.searchParams.set('member_id', `eq.${member_id}`);
+         url.searchParams.set('status', 'eq.pending');
+         url.searchParams.set('select', 'id');
 
-        const resp2 = await fetch(url.toString(), {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SERVICE_ROLE_KEY,
-            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            'Prefer': 'return=minimal',
-          },
-          body: JSON.stringify({
-            status: 'completed',
-            razorpay_payment_id,
-            razorpay_order_id,
-          }),
-        });
-        // ignore body; if it fails, we still return success for the caller
-      } catch (_) {}
-    }
+         const resp2 = await fetch(url.toString(), {
+           method: 'PATCH',
+           headers: {
+             'Content-Type': 'application/json',
+             'apikey': SERVICE_ROLE_KEY,
+             'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+             'Prefer': 'return=minimal',
+           },
+           body: JSON.stringify({
+             status: 'completed',
+             razorpay_payment_id,
+             razorpay_order_id,
+           }),
+         });
+         // ignore body; if it fails, we still return success for the caller
+       } catch (_) {}
+     } else {
+       // Public donation: insert a donation record with provided donor details
+       try {
+         const { donor_name, phone, email, amount, remarks } = payload || {};
+         const url = new URL(`${SUPABASE_URL}/rest/v1/donations`);
+         const insertResp = await fetch(url.toString(), {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+             'apikey': SERVICE_ROLE_KEY,
+             'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+             'Prefer': 'return=minimal',
+           },
+           body: JSON.stringify({
+             donor_name,
+             phone,
+             email,
+             amount,
+             remarks,
+             status: 'completed',
+             razorpay_payment_id,
+             razorpay_order_id,
+           }),
+         });
+       } catch (_) {}
+     }
+   }
 
     return new Response(JSON.stringify({ status: 'success' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

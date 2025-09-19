@@ -27,7 +27,7 @@ interface FormErrors {
   [key: string]: string;
 }
 
-const MEMBERSHIP_FEE = 500;
+const MEMBERSHIP_FEE = 1;
 
 export default function MemberRegistration() {
   const [formData, setFormData] = useState<FormData>({
@@ -80,8 +80,6 @@ export default function MemberRegistration() {
     if (!formData.taluk) newErrors.taluk = 'Taluk is required';
     if (!formData.city) newErrors.city = 'City is required';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.drugLicense) newErrors.drugLicense = 'Drug License is required';
-    if (!formData.idProof) newErrors.idProof = 'ID Proof is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -433,7 +431,7 @@ export default function MemberRegistration() {
             </div>
 
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center"><Building2 className="h-5 w-5 mr-2 text-emerald-700" />Required Documents</h2>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center"><Building2 className="h-5 w-5 mr-2 text-emerald-700" />Documents (Optional)</h2>
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4">
                 <h3 className="font-semibold text-blue-900 text-sm mb-2">Document Requirements:</h3>
                 <ul className="text-blue-800 text-sm space-y-1">
@@ -445,13 +443,13 @@ export default function MemberRegistration() {
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Drug License *</label>
-                  <input type="file" name="drugLicense" required onChange={(e) => handleFileChange(e, 'drugLicense')} accept=".pdf,.jpg,.jpeg,.png" className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 ${errors.drugLicense ? 'border-red-500 rounded-lg' : ''}`} />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Drug License (optional)</label>
+                  <input type="file" name="drugLicense" onChange={(e) => handleFileChange(e, 'drugLicense')} accept=".pdf,.jpg,.jpeg,.png" className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 ${errors.drugLicense ? 'border-red-500 rounded-lg' : ''}`} />
                   {errors.drugLicense && <p className="text-red-500 text-sm mt-1">{errors.drugLicense}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Proof (Aadhar/PAN) *</label>
-                  <input type="file" name="idProof" required onChange={(e) => handleFileChange(e, 'idProof')} accept=".pdf,.jpg,.jpeg,.png" className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 ${errors.idProof ? 'border-red-500 rounded-lg' : ''}`} />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ID Proof (Aadhar/PAN) (optional)</label>
+                  <input type="file" name="idProof" onChange={(e) => handleFileChange(e, 'idProof')} accept=".pdf,.jpg,.jpeg,.png" className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 ${errors.idProof ? 'border-red-500 rounded-lg' : ''}`} />
                   {errors.idProof && <p className="text-red-500 text-sm mt-1">{errors.idProof}</p>}
                 </div>
               </div>

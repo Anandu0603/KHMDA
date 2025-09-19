@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, LogOut, Settings, User, Menu, X } from 'lucide-react';
+import { LogOut, Settings, User, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
+import Logo from './Logo';
 
 const navLinks = [
   { name: 'Home', path: '/' },
@@ -11,6 +12,7 @@ const navLinks = [
   { name: 'Committee', path: '/committee' },
   { name: 'Membership', path: '/membership' },
   { name: 'News', path: '/news' },
+  { name: 'Donate', path: '/donate' },
   { name: 'Contact Us', path: '/contact' },
 ];
 
@@ -30,9 +32,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-emerald-700 rounded-lg flex items-center justify-center">
-              <Heart className="h-6 w-6 text-white" />
-            </div>
+            <Logo className="w-10 h-10" />
             <div>
               <h1 className="text-xl font-bold text-gray-900">KMDA</h1>
               <p className="text-xs text-gray-600 hidden sm:block">Kerala Medical Distributors</p>

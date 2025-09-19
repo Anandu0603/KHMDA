@@ -23,11 +23,17 @@ import PaymentCancel from './pages/PaymentCancel';
 import RazorpayPayment from './pages/RazorpayPayment';
 import RenewalPage from './pages/RenewalPage';
 import ReportsPage from './pages/ReportsPage';
+import ReportsMembers from './pages/ReportsMembers';
+import ReportsPayments from './pages/ReportsPayments';
+import ReportsDonations from './pages/ReportsDonations';
+import DonationPage from './pages/DonationPage';
 
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
+import DonationSuccess from './pages/DonationSuccess';
+import DonationCancel from './pages/DonationCancel';
 
 function App() {
   return (
@@ -46,12 +52,16 @@ function App() {
                 <Route path="/membership" element={<MembershipInfoPage />} />
                 <Route path="/news" element={<NewsPage />} />
                 <Route path="/contact" element={<ContactPage />} />
+                <Route path="/donate" element={<DonationPage />} />
 
                 {/* Member & Admin Portal Routes */}
                 <Route path="/register" element={<MemberRegistration />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/reports" element={<ReportsPage />} />
+                <Route path="/admin/reports/members" element={<ReportsMembers />} />
+                <Route path="/admin/reports/payments" element={<ReportsPayments />} />
+                <Route path="/admin/reports/donations" element={<ReportsDonations />} />
                 <Route path="/admin/member/:id" element={<AdminMemberDetails />} />
                 <Route path="/member/profile" element={<MemberProfile />} />
                 <Route path="/member/renew" element={<RenewalPage />} />
@@ -60,6 +70,10 @@ function App() {
                 <Route path="/payment/razorpay" element={<RazorpayPayment />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/cancel" element={<PaymentCancel />} />
+
+                {/* Donation Flow */}
+                <Route path="/donation/success" element={<DonationSuccess />} />
+                <Route path="/donation/cancel" element={<DonationCancel />} />
               </Routes>
             </main>
             <Footer />

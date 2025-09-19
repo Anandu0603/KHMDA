@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supa:login": "npx supabase login",
+    "deploy:cert": "npx supabase link --project-ref %SUPABASE_PROJECT_REF% && npx supabase functions deploy generate-certificate"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
