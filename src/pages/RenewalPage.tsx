@@ -25,6 +25,13 @@ export default function RenewalPage() {
     }
   }, [authLoading, user]);
 
+  // Prevent infinite spinner when not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLoading(false);
+    }
+  }, [authLoading, user]);
+
   const fetchMemberProfile = async () => {
     try {
       const { data, error } = await supabase

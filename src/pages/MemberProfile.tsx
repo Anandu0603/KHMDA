@@ -53,6 +53,14 @@ export default function MemberProfile() {
     }
   }, [authLoading, user, isAdmin, id]);
 
+  // Prevent infinite spinner when not authenticated
+  useEffect(() => {
+    if (!authLoading && !(user || isAdmin)) {
+      // Not logged in or admin; stop loading so redirect can happen
+      setLoading(false);
+    }
+  }, [authLoading, user, isAdmin]);
+
   const fetchMemberProfile = async () => {
     try {
       let query = supabase.from('members').select('*');
