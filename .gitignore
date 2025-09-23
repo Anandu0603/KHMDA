@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 
 .env
+SUPABASE_SETUP_GUIDE.md
