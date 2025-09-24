@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Calendar, Download, ArrowLeft, Heart } from 'lucide-react';
+import { Calendar, Download, ArrowLeft, Heart, HeartHandshake } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';

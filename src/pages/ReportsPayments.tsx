@@ -4,15 +4,15 @@ import { Calendar, Download, ArrowLeft, IndianRupee } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Payment } from '../types/database';
+import { Payment, PaymentWithMember } from '../types/database';
 
 const ReportsPayments: React.FC = () => {
   const { isAdmin, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<PaymentWithMember[]>([]);
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    startDate: '2024-01-01',
     endDate: new Date().toISOString().split('T')[0]
   });
 
@@ -25,17 +25,42 @@ const ReportsPayments: React.FC = () => {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch payments first
+      const { data: paymentData, error: paymentError } = await supabase
         .from('payments')
         .select('*')
-        .eq('status', 'completed')
         .gte('created_at', dateRange.startDate)
         .lte('created_at', dateRange.endDate + 'T23:59:59')
         .order('created_at', { ascending: false });
-      if (error) throw error;
-      setPayments(data || []);
-    } catch (e) {
-      addToast('Failed to load payments', 'error');
+
+      if (paymentError) throw paymentError;
+
+      // Fetch member details for each payment
+      const paymentsWithMembers = await Promise.all(
+        (paymentData || []).map(async (payment) => {
+          if (!payment.member_id) {
+            return { ...payment, member: null };
+          }
+
+          const { data: member, error: memberError } = await supabase
+            .from('members')
+            .select('company_name, contact_person, email')
+            .eq('id', payment.member_id)
+            .single();
+
+          if (memberError) {
+            console.error(`Failed to fetch member ${payment.member_id}:`, memberError);
+            return { ...payment, member: null };
+          }
+
+          return { ...payment, member };
+        })
+      );
+
+      setPayments(paymentsWithMembers);
+    } catch (e: any) {
+      console.error('Fetch payments error:', e);
+      addToast(`Failed to load payments: ${e.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -43,9 +68,11 @@ const ReportsPayments: React.FC = () => {
 
   const exportToCsv = () => {
     const filename = 'KMDA_Payments_Report.csv';
-    const headers = ['Member ID', 'Amount', 'Membership Fee', 'Gateway Charges', 'Donation Amount', 'Payment Type', 'Status', 'Payment Date'];
+    const headers = ['Company Name', 'Contact Person', 'Email', 'Amount', 'Membership Fee', 'Gateway Charges', 'Donation Amount', 'Payment Type', 'Status', 'Payment Date'];
     const rows = payments.map(p => [
-      p.member_id,
+      p.member?.company_name || 'N/A',
+      p.member?.contact_person || 'N/A',
+      p.member?.email || 'N/A',
       p.amount,
       p.membership_fee,
       p.gateway_charges,
@@ -129,7 +156,7 @@ const ReportsPayments: React.FC = () => {
               <table className="w-full text-xs sm:text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {['Member ID', 'Amount', 'Membership Fee', 'Gateway Charges', 'Donation Amount', 'Payment Type', 'Status', 'Payment Date'].map(h => (
+                    {['Company Name', 'Contact Person', 'Email', 'Amount', 'Membership Fee', 'Gateway Charges', 'Donation Amount', 'Payment Type', 'Status', 'Payment Date'].map(h => (
                       <th key={h} className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 uppercase">{h}</th>
                     ))}
                   </tr>
@@ -137,13 +164,15 @@ const ReportsPayments: React.FC = () => {
                 <tbody className="divide-y divide-gray-200">
                   {payments.map(p => (
                     <tr key={p.id}>
-                      <td className="px-2 sm:px-4 py-2 text-gray-700 font-mono" title={p.member_id}>{p.member_id?.substring(0, 10)}...</td>
-                      <td className="px-2 sm:px-4 py-2 text-gray-700">₹{(p.amount || 0).toLocaleString()}</td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-700 font-medium">{p.member?.company_name || 'N/A'}</td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-700">{p.member?.contact_person || 'N/A'}</td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-700">{p.member?.email || 'N/A'}</td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-700 font-semibold">₹{(p.amount || 0).toLocaleString()}</td>
                       <td className="px-2 sm:px-4 py-2 text-gray-700">₹{(p.membership_fee || 0).toLocaleString()}</td>
                       <td className="px-2 sm:px-4 py-2 text-gray-700">₹{(p.gateway_charges || 0).toLocaleString()}</td>
                       <td className="px-2 sm:px-4 py-2 text-gray-700">₹{(p.donation_amount || 0).toLocaleString()}</td>
                       <td className="px-2 sm:px-4 py-2"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.payment_type === 'renewal' ? 'bg-blue-100 text-blue-800' : p.payment_type === 'registration' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{p.payment_type}</span></td>
-                      <td className="px-2 sm:px-4 py-2 text-gray-700">{p.status}</td>
+                      <td className="px-2 sm:px-4 py-2"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.status === 'completed' ? 'bg-green-100 text-green-800' : p.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>{p.status}</span></td>
                       <td className="px-2 sm:px-4 py-2 text-gray-700">{new Date(p.created_at).toLocaleDateString('en-IN')}</td>
                     </tr>
                   ))}

@@ -69,3 +69,11 @@ export interface Donation {
   created_at: string;
   updated_at: string;
 }
+
+export interface PaymentWithMember extends Payment {
+  member: {
+    company_name: string;
+    contact_person: string;
+    email: string;
+  } | null;
+}

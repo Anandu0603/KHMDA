@@ -74,6 +74,28 @@ export default function DonationPage() {
       const { order_id } = orderData || {};
       if (!order_id) throw new Error('Could not get a valid order id');
 
+      // Create pending donation record
+      const { data: donationData, error: donationError } = await supabase
+        .from('donations')
+        .insert({
+          donor_name: name || null,
+          phone: phone || null,
+          email: email || null,
+          amount: rupees,
+          remarks: remarks || null,
+          status: 'pending',
+          razorpay_order_id: order_id,
+        })
+        .select('id')
+        .single();
+
+      if (donationError) {
+        console.error('Failed to create donation record:', donationError);
+        // Continue with payment even if insert fails, as it's best-effort
+      }
+
+      const donationId = donationData?.id || null;
+
       const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
       if (!keyId) throw new Error('API keys are not configured: VITE_RAZORPAY_KEY_ID missing');
 
@@ -100,7 +122,8 @@ export default function DonationPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                // Public donation details for server-side persistence
+                donation_id: donationId,
+                // Public donation details for server-side persistence (fallback if no donation_id)
                 donor_name: name || null,
                 phone: phone || null,
                 email: email || null,
@@ -108,7 +131,7 @@ export default function DonationPage() {
                 remarks: remarks || null,
               },
             });
-
+  
             if (verificationError || !verificationData || verificationData.status !== 'success') {
               let detailed = verificationError?.message || 'Payment verification failed';
               try {
@@ -120,7 +143,7 @@ export default function DonationPage() {
               } catch {}
               throw new Error(detailed);
             }
-
+  
             navigate('/donation/success', { state: { amount: rupees, donorName: name } });
           } catch (err: any) {
             navigate('/donation/cancel', { state: { error: err.message, amount: rupees } });
