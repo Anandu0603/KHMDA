@@ -121,6 +121,7 @@ export default function AdminDashboard() {
         'success'
       );
       
+      setLoading(true);
       fetchMembers();
     } catch (error: any) {
       console.error('Status update error:', error);

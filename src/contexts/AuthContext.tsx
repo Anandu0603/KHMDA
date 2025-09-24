@@ -46,12 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Admin check timeout')), 5000)
+    );
+
     try {
-      const { data, error } = await supabase
+      const queryPromise = supabase
         .from('admin_users')
         .select('id')
         .eq('user_id', userId)
-        .maybeSingle(); 
+        .maybeSingle();
+
+      const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+
+      const { data, error } = result;
 
       if (error) {
         console.error('Admin check error:', error);
@@ -60,8 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const adminStatus = !!data;
         setIsAdmin(adminStatus);
       }
-    } catch (err) {
-      console.error('Admin check exception:', err);
+    } catch (err: any) {
+      console.error('Admin check exception or timeout:', err);
       setIsAdmin(false);
     } finally {
       setLoading(false);

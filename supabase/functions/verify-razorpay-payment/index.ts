@@ -46,7 +46,7 @@ serve(async (req) => {
       });
     }
 
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, member_id } = payload || {};
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, member_id, donation_id, donor_name, phone, email, amount, remarks } = payload || {};
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return new Response(JSON.stringify({ error: 'Missing payment verification details.' }), {
@@ -113,9 +113,30 @@ serve(async (req) => {
          // ignore body; if it fails, we still return success for the caller
        } catch (_) {}
      } else {
-       // Public donation: insert a donation record with provided donor details
-       try {
-         const { donor_name, phone, email, amount, remarks } = payload || {};
+       // Public donation: if donation_id provided, update existing pending record; else insert new
+       if (donation_id) {
+         // Update existing pending donation
+         const url = new URL(`${SUPABASE_URL}/rest/v1/donations?id=eq.${donation_id}`);
+         const updateResp = await fetch(url.toString(), {
+           method: 'PATCH',
+           headers: {
+             'Content-Type': 'application/json',
+             'apikey': SERVICE_ROLE_KEY,
+             'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+             'Prefer': 'return=minimal',
+           },
+           body: JSON.stringify({
+             status: 'completed',
+             razorpay_payment_id,
+             razorpay_order_id,
+             updated_at: new Date().toISOString(),
+           }),
+         });
+         if (!updateResp.ok) {
+           throw new Error(`Failed to update donation: ${updateResp.statusText}`);
+         }
+       } else {
+         // Fallback: insert new completed donation
          const url = new URL(`${SUPABASE_URL}/rest/v1/donations`);
          const insertResp = await fetch(url.toString(), {
            method: 'POST',
@@ -134,9 +155,14 @@ serve(async (req) => {
              status: 'completed',
              razorpay_payment_id,
              razorpay_order_id,
+             created_at: new Date().toISOString(),
+             updated_at: new Date().toISOString(),
            }),
          });
-       } catch (_) {}
+         if (!insertResp.ok) {
+           throw new Error(`Failed to insert donation: ${insertResp.statusText}`);
+         }
+       }
      }
    }
 
