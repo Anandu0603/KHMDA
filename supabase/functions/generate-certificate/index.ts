@@ -91,15 +91,51 @@ serve(async (req) => {
       // Continue even if DB insert fails, PDF is generated
     }
 
+    // Send email with certificate link
+    console.log('Attempting to send certificate email to:', member.email);
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2d3748; text-align: center;">Your KMDA Membership Certificate</h2>
+        <p>Dear ${member.contact_person},</p>
+        <p>Your membership certificate for <strong>${member.company_name}</strong> has been generated successfully.</p>
+        <p><strong>Certificate Number:</strong> ${certificate_number}</p>
+        <p><strong>Valid Until:</strong> ${new Date(valid_until).toLocaleDateString('en-IN')}</p>
+        <p>Download your certificate here: <a href="${pdfUrl}" style="color: #3182ce; text-decoration: none; font-weight: bold;">View/Download Certificate</a></p>
+        <p style="margin-top: 20px;">If the link doesn't work, you can access it from your member profile in the KMDA portal.</p>
+        <p>Best regards,<br/>Kerala Medical Distributors Association (KMDA)</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+        <p style="font-size: 12px; color: #718096; text-align: center;">This is an automated message. Please do not reply.</p>
+      </div>
+    `
+
+    const emailPayload = {
+      to: member.email,
+      subject: `KMDA Membership Certificate - ${certificate_number}`,
+      html: emailBody
+    };
+
+    const { data: emailData, error: emailError } = await supabase.functions.invoke('send-email', {
+      body: emailPayload
+    });
+
+    console.log('Email invoke result:', { data: emailData, error: emailError });
+
+    if (emailError) {
+      console.error('Failed to send certificate email to', member.email, ':', emailError);
+      // Don't fail the response; certificate is still generated and uploaded
+    } else {
+      console.log('Certificate email sent successfully to:', member.email);
+    }
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        certificate_url: pdfUrl, 
-        certificate_number: certificate_number 
+      JSON.stringify({
+        success: true,
+        certificate_url: pdfUrl,
+        certificate_number: certificate_number
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
 
