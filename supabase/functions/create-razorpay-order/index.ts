@@ -12,7 +12,7 @@ serve(async (req) => {
   try {
     // Crucial check for environment variables
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-      throw new Error('Razorpay API keys are not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your Supabase project secrets for Edge Functions.');
+      throw new Error('Razorpay API keys are not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your current upabase project secrets for Edge Functions.');
     }
 
     const { amount } = await req.json();
