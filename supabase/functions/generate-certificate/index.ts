@@ -49,7 +49,8 @@ serve(async (req) => {
       city: member.city,
       issueDate: new Date().toISOString(),
       validUntil: valid_until,
-      email: member.email
+      email: member.email,
+      logoUrl: 'https://i.ibb.co/h1FQZp7q/kmdalogo.png'
     });
 
     // Generate unique filename
@@ -163,18 +164,16 @@ async function generateCertificatePDF(data: {
   issueDate: string;
   validUntil: string;
   email: string;
+  logoUrl?: string;
 }): Promise<Uint8Array> {
   try {
-    // Import pdf-lib
     const pdfLib = await import('https://esm.sh/pdf-lib@1.17.1');
     const { PDFDocument, StandardFonts, rgb } = pdfLib;
 
-    // Create a new PDF document
     const pdfDoc = await PDFDocument.create();
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Add a page (A4)
     const page = pdfDoc.addPage([595, 842]);
     const { width, height } = page.getSize();
 
@@ -189,209 +188,182 @@ async function generateCertificatePDF(data: {
         day: 'numeric',
       });
 
-    // Background - cream/off-white
+    // Background
     page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 0.98, 0.95) });
 
-    // Border - gold
+    // Border - gold (subtle, using separate rectangles as pdf-lib doesn't support borders directly)
     const borderColor = rgb(1, 0.84, 0);
-    page.drawRectangle({
-      x: 20, y: 20, width: width - 40, height: height - 40,
-      color: borderColor, opacity: 0.1
-    });
-    page.drawRectangle({
-      x: 20, y: 20, width: width - 40, height: 5,
-      color: borderColor
-    });
-    page.drawRectangle({
-      x: 20, y: height - 25, width: width - 40, height: 5,
-      color: borderColor
-    });
-    page.drawRectangle({
-      x: 20, y: 20, width: 5, height: height - 40,
-      color: borderColor
-    });
-    page.drawRectangle({
-      x: width - 25, y: 20, width: 5, height: height - 40,
-      color: borderColor
-    });
+    page.drawRectangle({ x: 20, y: 20, width: width - 40, height: height - 40, color: borderColor, opacity: 0.08 });
+    page.drawRectangle({ x: 20, y: 20, width: width - 40, height: 5, color: borderColor });
+    page.drawRectangle({ x: 20, y: height - 25, width: width - 40, height: 5, color: borderColor });
+    page.drawRectangle({ x: 20, y: 20, width: 5, height: height - 40, color: borderColor });
+    page.drawRectangle({ x: width - 25, y: 20, width: 5, height: height - 40, color: borderColor });
 
-    // Header with blue color
+    // Colors
     const blueColor = rgb(0, 0.4, 0.8);
-    const title1 = 'KERALA MEDICAL DISTRIBUTORS ASSOCIATION';
-    const title2 = '(KMDA)';
-    const title3 = 'CERTIFICATE OF REGISTRATION';
-
-    // Association logo - simple medical cross
-    page.drawRectangle({
-      x: 80, y: height - 70, width: 30, height: 30,
-      color: blueColor
-    });
     const whiteColor = rgb(1, 1, 1);
-    page.drawLine({
-      start: { x: 95, y: height - 85 }, end: { x: 95, y: height - 55 },
-      thickness: 4, color: whiteColor
-    });
-    page.drawLine({
-      start: { x: 65, y: height - 70 }, end: { x: 125, y: height - 70 },
-      thickness: 4, color: whiteColor
-    });
 
-    page.drawText(title1, {
-      x: centerX(title1, 22, boldFont),
-      y: height - 80,
+    // Logo - positioned higher with more margin from top
+    let embeddedLogo = null;
+    let logoHeight = 60; // Default for fallback
+    try {
+      const resp = await fetch(data.logoUrl || 'https://i.ibb.co/h1FQZp7q/kmdalogo.png');
+      if (resp.ok) {
+        const contentType = resp.headers.get('content-type') || '';
+        const bytes = await resp.arrayBuffer();
+        if (contentType.includes('png')) {
+          embeddedLogo = await pdfDoc.embedPng(bytes);
+        } else {
+          embeddedLogo = await pdfDoc.embedJpg(bytes);
+        }
+        if (embeddedLogo) {
+          logoHeight = (embeddedLogo.height / embeddedLogo.width) * 60;
+        }
+      }
+    } catch (err) {
+      console.warn('Logo embed error:', err);
+    }
+
+    const logoTopMargin = 40; // Increased margin from top
+    const logoTopY = height - logoTopMargin;
+    const logoY = logoTopY - logoHeight;
+    if (embeddedLogo) {
+      page.drawImage(embeddedLogo, {
+        x: 80,
+        y: logoY,
+        width: 60,
+        height: logoHeight,
+      });
+    } else {
+      // Fallback placeholder, fixed size
+      const fallbackHeight = 30;
+      page.drawRectangle({ x: 80, y: logoTopY - fallbackHeight, width: 30, height: fallbackHeight, color: blueColor });
+      page.drawLine({ start: { x: 95, y: logoTopY - 15 }, end: { x: 95, y: logoTopY + 15 }, thickness: 4, color: whiteColor });
+      page.drawLine({ start: { x: 65, y: logoTopY - fallbackHeight / 2 }, end: { x: 125, y: logoTopY - fallbackHeight / 2 }, thickness: 4, color: whiteColor });
+      logoHeight = fallbackHeight;
+    }
+
+    // Header text - positioned well below logo with larger buffer
+    const headerBuffer = 30; // Increased buffer
+    const title1Y = logoY - headerBuffer;
+    page.drawText('KERALA MEDICAL DISTRIBUTORS ASSOCIATION', {
+      x: centerX('KERALA MEDICAL DISTRIBUTORS ASSOCIATION', 22, boldFont),
+      y: title1Y,
       size: 22,
       font: boldFont,
       color: blueColor,
     });
-
-    page.drawText(title2, {
-      x: centerX(title2, 14, regularFont),
-      y: height - 105,
+    page.drawText('(KMDA)', {
+      x: centerX('(KMDA)', 14, regularFont),
+      y: title1Y - 25,
       size: 14,
       font: regularFont,
       color: blueColor,
     });
-
-    page.drawText(title3, {
-      x: centerX(title3, 18, boldFont),
-      y: height - 130,
+    page.drawText('CERTIFICATE OF REGISTRATION', {
+      x: centerX('CERTIFICATE OF REGISTRATION', 18, boldFont),
+      y: title1Y - 50,
       size: 18,
       font: boldFont,
       color: rgb(0, 0, 0),
     });
 
-    // Decorative divider - blue ribbon style
+    // Decorative divider - below titles with space
+    const dividerY = title1Y - 70;
     page.drawRectangle({
-      x: 60, y: height - 145, width: width - 120, height: 8,
-      color: blueColor, opacity: 0.8
+      x: 60,
+      y: dividerY,
+      width: width - 120,
+      height: 8,
+      color: blueColor,
+      opacity: 0.8,
     });
     page.drawRectangle({
-      x: 60, y: height - 147, width: width - 120, height: 4,
-      color: rgb(1, 1, 1), opacity: 0.9
+      x: 60,
+      y: dividerY - 2,
+      width: width - 120,
+      height: 4,
+      color: whiteColor,
+      opacity: 0.9,
     });
+
+    // Start body text - more space below divider
+    let curY = dividerY - 50;
+    const lineGap = 28; // Adjusted for better spacing
+
+    const drawCenteredLine = (text: string, size: number, font = regularFont, color = rgb(0, 0, 0)) => {
+      page.drawText(text, {
+        x: centerX(text, size, font),
+        y: curY,
+        size,
+        font,
+        color,
+      });
+      curY -= lineGap;
+    };
 
     // Body
-    const line1 = 'This is to certify that';
-    page.drawText(line1, {
-      x: centerX(line1, 14, regularFont),
-      y: height - 175,
-      size: 14,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
+    drawCenteredLine('This is to certify that', 14);
 
-    // Company name with bullet
-    const companySize = 16;
-    const companyText = data.companyName;
-    const companyTextWidth = boldFont.widthOfTextAtSize(companyText, companySize);
-    const companyX = (width - companyTextWidth) / 2;
-    // Blue diamond/circle bullet
-    page.drawCircle({ x: companyX - 10, y: height - 231, size: 4, color: blueColor });
-    page.drawText(companyText, {
-      x: companyX,
-      y: height - 235,
-      size: companySize,
-      font: boldFont,
-      color: rgb(0, 0, 0),
-    });
+    // Name with bullet - on next line
+    const nameText = data.companyName || data.memberName || '—';
+    const nameSize = 16;
+    const nameWidth = boldFont.widthOfTextAtSize(nameText, nameSize);
+    const nameX = (width - nameWidth) / 2;
+    page.drawCircle({ x: nameX - 12, y: curY + 5, size: 5, color: blueColor });
+    page.drawText(nameText, { x: nameX, y: curY, size: nameSize, font: boldFont, color: rgb(0, 0, 0) });
+    curY -= lineGap;
 
-    const line2 = 'is a registered member of the KMDA';
-    page.drawText(line2, {
-      x: centerX(line2, 14, regularFont),
-      y: height - 265,
-      size: 14,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
+    drawCenteredLine('is a registered member of the KMDA', 14);
 
-    // Registration details with blue banners
-    page.drawRectangle({
-      x: 100, y: height - 285, width: width - 200, height: 20,
-      color: blueColor, opacity: 0.1
-    });
-    const regText = `Registration Number: ${data.certificateNumber}`;
-    page.drawText(regText, {
-      x: centerX(regText, 12, regularFont),
-      y: height - 300,
-      size: 12,
-      font: regularFont,
-      color: blueColor,
-    });
+    // Registration number - with small gap
+    const regBoxWidth = width - 200;
+    const regBoxX = (width - regBoxWidth) / 2;
+    page.drawRectangle({ x: regBoxX, y: curY - 8, width: regBoxWidth, height: 22, color: blueColor, opacity: 0.08 });
+    const regText = `Registration Number: ${data.certificateNumber || 'N/A'}`;
+    page.drawText(regText, { x: centerX(regText, 12, regularFont), y: curY - 2, size: 12, font: regularFont, color: blueColor });
+    curY -= lineGap;
 
-    // Dates with ribbon banners
-    const doi = `Date of Issue: ${formatLongDate(data.issueDate)}`;
+    // Issue Date
+    const doi = `Date of Issue: ${formatLongDate(data.issueDate || new Date().toISOString())}`;
+    page.drawRectangle({ x: regBoxX, y: curY - 8, width: regBoxWidth, height: 20, color: borderColor, opacity: 0.2 });
+    page.drawText(doi, { x: centerX(doi, 12, regularFont), y: curY - 2, size: 12, font: regularFont, color: rgb(0, 0, 0) });
+    curY -= lineGap;
+
+    // Expiry Date
     const doe = `Expiry Date: ${formatLongDate(data.validUntil)}`;
-    
-    // Issue date banner
-    page.drawRectangle({
-      x: 80, y: height - 320, width: width - 160, height: 18,
-      color: borderColor, opacity: 0.3
-    });
-    page.drawText(doi, {
-      x: centerX(doi, 12, regularFont),
-      y: height - 325,
-      size: 12,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
-    
-    // Expiry date banner
-    page.drawRectangle({
-      x: 80, y: height - 350, width: width - 160, height: 18,
-      color: borderColor, opacity: 0.3
-    });
-    page.drawText(doe, {
-      x: centerX(doe, 12, regularFont),
-      y: height - 345,
-      size: 12,
-      font: regularFont,
-      color: rgb(0, 0, 0),
-    });
+    page.drawRectangle({ x: regBoxX, y: curY - 8, width: regBoxWidth, height: 20, color: borderColor, opacity: 0.2 });
+    page.drawText(doe, { x: centerX(doe, 12, regularFont), y: curY - 2, size: 12, font: regularFont, color: rgb(0, 0, 0) });
+    curY -= lineGap;
 
-    // Paragraph
+    // Paragraph - use smaller gap for lines
+    const paraGap = 18;
     const p1 = 'This certificate confirms the validity of';
+    page.drawText(p1, { x: centerX(p1, 12, regularFont), y: curY, size: 12, font: regularFont, color: rgb(0, 0, 0) });
+    curY -= paraGap;
     const p2 = 'membership and all associated rights and';
+    page.drawText(p2, { x: centerX(p2, 12, regularFont), y: curY, size: 12, font: regularFont, color: rgb(0, 0, 0) });
+    curY -= paraGap;
     const p3 = 'privileges until the expiry date.';
-    page.drawText(p1, { x: centerX(p1, 12, regularFont), y: height - 380, size: 12, font: regularFont, color: rgb(0,0,0) });
-    page.drawText(p2, { x: centerX(p2, 12, regularFont), y: height - 400, size: 12, font: regularFont, color: rgb(0,0,0) });
-    page.drawText(p3, { x: centerX(p3, 12, regularFont), y: height - 420, size: 12, font: regularFont, color: rgb(0,0,0) });
+    page.drawText(p3, { x: centerX(p3, 12, regularFont), y: curY, size: 12, font: regularFont, color: rgb(0, 0, 0) });
 
-    // Seals and signature
-    // Left seal - KMDA logo
-    page.drawCircle({
-      x: 120, y: 120, size: 40,
-      color: blueColor, opacity: 0.2
-    });
-    page.drawText('KMDA', {
-      x: 120, y: 125,
-      size: 10, font: boldFont, color: blueColor
-    });
+    // Seals - fixed positions
+    page.drawCircle({ x: 120, y: 120, size: 40, color: blueColor, opacity: 0.18 });
+    page.drawText('KMDA', { x: 120 - boldFont.widthOfTextAtSize('KMDA', 10) / 2, y: 125, size: 10, font: boldFont, color: blueColor });
 
-    // Right seal
-    page.drawCircle({
-      x: width - 120, y: 120, size: 40,
-      color: borderColor, opacity: 0.3
-    });
-    page.drawText('SEAL', {
-      x: width - 120, y: 125,
-      size: 8, font: regularFont, color: rgb(0,0,0)
-    });
+    page.drawCircle({ x: width - 120, y: 120, size: 40, color: borderColor, opacity: 0.28 });
+    page.drawText('SEAL', { x: width - 120 - regularFont.widthOfTextAtSize('SEAL', 8) / 2, y: 125, size: 8, font: regularFont, color: rgb(0, 0, 0) });
 
-    // Signature line
+    // Signature - fixed
     const sigY = 100;
-    const lineWidth = 220;
-    const lineStartX = (width - lineWidth) / 2;
-    page.drawLine({ start: { x: lineStartX, y: sigY }, end: { x: lineStartX + lineWidth, y: sigY }, thickness: 1, color: rgb(0, 0, 0) });
-    const sigText = 'President, KMDA';
-    page.drawText(sigText, { x: centerX(sigText, 12, regularFont), y: sigY - 18, size: 12, font: regularFont, color: rgb(0, 0, 0) });
+    const sigLineWidth = 220;
+    const sigX = (width - sigLineWidth) / 2;
+    page.drawLine({ start: { x: sigX, y: sigY }, end: { x: sigX + sigLineWidth, y: sigY }, thickness: 1, color: rgb(0, 0, 0) });
+    page.drawText('President, KMDA', { x: centerX('President, KMDA', 12), y: sigY - 18, size: 12, font: regularFont, color: rgb(0, 0, 0) });
+    const sigDate = `Date: ${formatLongDate(data.issueDate || new Date().toISOString())}`;
+    page.drawText(sigDate, { x: centerX(sigDate, 10), y: sigY - 35, size: 10, font: regularFont, color: rgb(0.3, 0.3, 0.3) });
 
-    // Date below signature
-    const sigDate = `Date: ${formatLongDate(data.issueDate)}`;
-    page.drawText(sigDate, { x: centerX(sigDate, 10, regularFont), y: sigY - 35, size: 10, font: regularFont, color: rgb(0.3, 0.3, 0.3) });
-
-    // Serialize the PDF
-    const pdfBytes = await pdfDoc.save();
-    return pdfBytes;
+    return await pdfDoc.save();
   } catch (error) {
     throw new Error(`Failed to generate PDF certificate: ${error.message}`);
   }
