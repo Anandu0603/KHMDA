@@ -173,8 +173,8 @@ export default function DonationPage() {
     <div className="bg-white">
       <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
         <div className="text-center">
-          <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4 p-1">
-            <Logo className="w-12 h-12 text-emerald-700" />
+          <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 p-1">
+            <Logo className="w-12 h-12" />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Make a Donation</h1>
           <p className="mt-4 text-gray-600">Support KMDA initiatives. Provide your details and amount to proceed.</p>

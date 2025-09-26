@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
           {/* About Section */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center space-x-3 mb-3 sm:mb-4">
-              <Logo className="w-8 h-8 sm:w-10 sm:h-10" />
+              <Logo className="w-10 h-10" />
               <h2 className="text-lg sm:text-xl font-bold">KMDA</h2>
             </div>
             <p className="text-gray-400 text-xs sm:text-sm">
