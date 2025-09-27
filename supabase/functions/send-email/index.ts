@@ -1,8 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { corsHeaders } from '../_shared/cors.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS'
+};
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'KMDA Membership <noreply@kmda.org>';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -10,45 +14,52 @@ serve(async (req) => {
   }
 
   try {
-    // Crucial check for environment variable
-    if (!RESEND_API_KEY) {
-      throw new Error('Resend API key is not configured. Please set RESEND_API_KEY in your Supabase project secrets for Edge Functions.');
-    }
+    const { to, subject, html, pdfBase64, certificateNumber } = await req.json();
 
-    const { to, subject, html } = await req.json();
+    const from = 'KMDA Membership <noreply@kmda.in>'; // ✅ must be verified in Resend
 
-    if (!to || !subject || !html) {
-      throw new Error('Missing required email parameters: to, subject, or html.');
+    // ✅ Build payload with optional attachment
+    const body: any = {
+      from,
+      to,
+      subject,
+      html
+    };
+
+    if (pdfBase64 && certificateNumber) {
+      body.attachments = [
+        {
+          filename: `KMDA_${certificateNumber}.pdf`,
+          content: pdfBase64,
+          type: 'application/pdf'
+        }
+      ];
     }
 
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': `Bearer ${RESEND_API_KEY}`
       },
-      body: JSON.stringify({
-        from: SENDER_EMAIL,
-        to: to,
-        subject: subject,
-        html: html,
-      }),
+      body: JSON.stringify(body)
     });
-
-    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(`Resend API Error: ${data?.message || 'Failed to send email.'}`);
+      const errorBody = await response.json();
+      throw new Error(`Resend API Error: ${JSON.stringify(errorBody)}`);
     }
 
+    const data = await response.json();
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
+      status: 200
     });
+
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
+      status: 500
     });
   }
 });

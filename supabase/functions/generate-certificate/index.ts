@@ -1,46 +1,55 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-// Inlined CORS headers to avoid external _shared dependency in Dashboard deployments
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PDFDocument, rgb, StandardFonts } from "https://cdn.skypack.dev/pdf-lib";
 
-// Initialize Supabase client with service role key
-const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS"
+};
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    if (req.method !== 'POST') {
-      throw new Error('Only POST method allowed');
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Only POST allowed" }), {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     const { member_id, certificate_number, valid_until } = await req.json();
 
     if (!member_id || !certificate_number || !valid_until) {
-      throw new Error('Missing required parameters: member_id, certificate_number, valid_until');
+      return new Response(JSON.stringify({ error: "Missing required parameters" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    // Fetch member details
     const { data: member, error: memberError } = await supabase
-      .from('members')
-      .select('company_name, contact_person, email, district, city, created_at')
-      .eq('id', member_id)
+      .from("members")
+      .select("contact_person, company_name, district, city, email")
+      .eq("id", member_id)
       .single();
 
     if (memberError || !member) {
-      throw new Error(`Member not found: ${memberError?.message || 'Unknown error'}`);
+      return new Response(JSON.stringify({ error: "Member not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    // Generate PDF certificate
     const pdfBuffer = await generateCertificatePDF({
       certificateNumber: certificate_number,
       memberName: member.contact_person,
@@ -50,321 +59,188 @@ serve(async (req) => {
       issueDate: new Date().toISOString(),
       validUntil: valid_until,
       email: member.email,
-      logoUrl: 'https://i.ibb.co/h1FQZp7q/kmdalogo.png'
+      logoUrl: "https://tlrtnjaxklleegwjyzxs.supabase.co/storage/v1/object/public/Logos/LGOS.png"
     });
 
-    // Generate unique filename
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `certificates/${certificate_number}_${timestamp}.pdf`;
-    
-    // Upload to storage
+    const filePath = `certificates/${certificate_number}.pdf`;
+
     const { error: uploadError } = await supabase.storage
-      .from('certificates')
-      .upload(fileName, pdfBuffer, {
-        contentType: 'application/pdf',
+      .from("certificates")
+      .upload(filePath, pdfBuffer, {
+        contentType: "application/pdf",
         upsert: true
       });
 
     if (uploadError) {
-      throw new Error(`Failed to upload certificate: ${uploadError.message}`);
+      console.error("Upload error:", uploadError);
+      throw new Error(`Upload failed: ${uploadError.message}`);
     }
 
-    // Get public URL
     const { data: publicUrlData } = supabase.storage
-      .from('certificates')
-      .getPublicUrl(fileName);
+      .from("certificates")
+      .getPublicUrl(filePath);
 
-    const pdfUrl = publicUrlData.publicUrl;
+    const publicUrl = publicUrlData?.publicUrl || null;
 
-    // Insert into certificates table
-    const { error: dbError } = await supabase
-      .from('certificates')
-      .insert({
-        member_id: member_id,
-        certificate_number: certificate_number,
-        valid_until: valid_until,
-        pdf_url: pdfUrl,
-        generated_at: new Date().toISOString()
-      });
-
-    if (dbError) {
-      console.error('Failed to insert certificate record:', dbError);
-      // Continue even if DB insert fails, PDF is generated
+    if (publicUrl && member.email) {
+      await sendCertificateEmail(member.email, member.contact_person, publicUrl);
     }
 
-    // Send email with certificate link
-    console.log('Attempting to send certificate email to:', member.email);
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2d3748; text-align: center;">Your KMDA Membership Certificate</h2>
-        <p>Dear ${member.contact_person},</p>
-        <p>Your membership certificate for <strong>${member.company_name}</strong> has been generated successfully.</p>
-        <p><strong>Certificate Number:</strong> ${certificate_number}</p>
-        <p><strong>Valid Until:</strong> ${new Date(valid_until).toLocaleDateString('en-IN')}</p>
-        <p>Download your certificate here: <a href="${pdfUrl}" style="color: #3182ce; text-decoration: none; font-weight: bold;">View/Download Certificate</a></p>
-        <p style="margin-top: 20px;">If the link doesn't work, you can access it from your member profile in the KMDA portal.</p>
-        <p>Best regards,<br/>Kerala Medical Distributors Association (KMDA)</p>
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;">
-        <p style="font-size: 12px; color: #718096; text-align: center;">This is an automated message. Please do not reply.</p>
-      </div>
-    `
-
-    const emailPayload = {
-      to: member.email,
-      subject: `KMDA Membership Certificate - ${certificate_number}`,
-      html: emailBody
-    };
-
-    const { data: emailData, error: emailError } = await supabase.functions.invoke('send-email', {
-      body: emailPayload
+    return new Response(JSON.stringify({
+      success: true,
+      certificate_url: publicUrl,
+      path: filePath
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200
     });
 
-    console.log('Email invoke result:', { data: emailData, error: emailError });
-
-    if (emailError) {
-      console.error('Failed to send certificate email to', member.email, ':', emailError);
-      // Don't fail the response; certificate is still generated and uploaded
-    } else {
-      console.log('Certificate email sent successfully to:', member.email);
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        certificate_url: pdfUrl,
-        certificate_number: certificate_number
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
-
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    );
+  } catch (err) {
+    console.error("Error:", err);
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
 });
 
-// PDF Generation using pdf-lib
-async function generateCertificatePDF(data: {
-  certificateNumber: string;
-  memberName: string;
-  companyName: string;
-  district: string;
-  city: string;
-  issueDate: string;
-  validUntil: string;
-  email: string;
-  logoUrl?: string;
-}): Promise<Uint8Array> {
-  try {
-    const pdfLib = await import('https://esm.sh/pdf-lib@1.17.1');
-    const { PDFDocument, StandardFonts, rgb } = pdfLib;
+async function sendCertificateEmail(to: string, name: string, url: string) {
+  const from = "KMDA Membership <noreply@kmda.in>";
+  const subject = "Your KMDA Membership Certificate";
+  const html = `
+    <p>Dear ${name},</p>
+    <p>Congratulations! Your KMDA Membership Certificate has been issued.</p>
+    <p>You can view and download it using the link below:</p>
+    <p><a href="${url}" target="_blank">Download Certificate</a></p>
+    <p>Best regards,<br>KMDA Team</p>
+  `;
 
-    const pdfDoc = await PDFDocument.create();
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${RESEND_API_KEY}`
+    },
+    body: JSON.stringify({ from, to, subject, html })
+  });
 
-    const page = pdfDoc.addPage([595, 842]);
-    const { width, height } = page.getSize();
-
-    // Helpers
-    const centerX = (text: string, size: number, font = regularFont) =>
-      (width - font.widthOfTextAtSize(text, size)) / 2;
-
-    const formatLongDate = (iso: string) =>
-      new Date(iso).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-
-    // Background
-    page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 0.98, 0.95) });
-
-    // Border - gold (subtle, using separate rectangles as pdf-lib doesn't support borders directly)
-    const borderColor = rgb(1, 0.84, 0);
-    page.drawRectangle({ x: 20, y: 20, width: width - 40, height: height - 40, color: borderColor, opacity: 0.08 });
-    page.drawRectangle({ x: 20, y: 20, width: width - 40, height: 5, color: borderColor });
-    page.drawRectangle({ x: 20, y: height - 25, width: width - 40, height: 5, color: borderColor });
-    page.drawRectangle({ x: 20, y: 20, width: 5, height: height - 40, color: borderColor });
-    page.drawRectangle({ x: width - 25, y: 20, width: 5, height: height - 40, color: borderColor });
-
-    // Colors
-    const blueColor = rgb(0, 0.4, 0.8);
-    const whiteColor = rgb(1, 1, 1);
-
-    // Logo - positioned higher with more margin from top
-    let embeddedLogo = null;
-    let logoHeight = 60; // Default for fallback
-    try {
-      const resp = await fetch(data.logoUrl || 'https://i.ibb.co/h1FQZp7q/kmdalogo.png');
-      if (resp.ok) {
-        const contentType = resp.headers.get('content-type') || '';
-        const bytes = await resp.arrayBuffer();
-        if (contentType.includes('png')) {
-          embeddedLogo = await pdfDoc.embedPng(bytes);
-        } else {
-          embeddedLogo = await pdfDoc.embedJpg(bytes);
-        }
-        if (embeddedLogo) {
-          logoHeight = (embeddedLogo.height / embeddedLogo.width) * 60;
-        }
-      }
-    } catch (err) {
-      console.warn('Logo embed error:', err);
-    }
-
-    const logoTopMargin = 40; // Increased margin from top
-    const logoTopY = height - logoTopMargin;
-    const logoY = logoTopY - logoHeight;
-    if (embeddedLogo) {
-      page.drawImage(embeddedLogo, {
-        x: 80,
-        y: logoY,
-        width: 60,
-        height: logoHeight,
-      });
-    } else {
-      // Fallback placeholder, fixed size
-      const fallbackHeight = 30;
-      page.drawRectangle({ x: 80, y: logoTopY - fallbackHeight, width: 30, height: fallbackHeight, color: blueColor });
-      page.drawLine({ start: { x: 95, y: logoTopY - 15 }, end: { x: 95, y: logoTopY + 15 }, thickness: 4, color: whiteColor });
-      page.drawLine({ start: { x: 65, y: logoTopY - fallbackHeight / 2 }, end: { x: 125, y: logoTopY - fallbackHeight / 2 }, thickness: 4, color: whiteColor });
-      logoHeight = fallbackHeight;
-    }
-
-    // Header text - positioned well below logo with larger buffer
-    const headerBuffer = 30; // Increased buffer
-    const title1Y = logoY - headerBuffer;
-    page.drawText('KERALA MEDICAL DISTRIBUTORS ASSOCIATION', {
-      x: centerX('KERALA MEDICAL DISTRIBUTORS ASSOCIATION', 22, boldFont),
-      y: title1Y,
-      size: 22,
-      font: boldFont,
-      color: blueColor,
-    });
-    page.drawText('(KMDA)', {
-      x: centerX('(KMDA)', 14, regularFont),
-      y: title1Y - 25,
-      size: 14,
-      font: regularFont,
-      color: blueColor,
-    });
-    page.drawText('CERTIFICATE OF REGISTRATION', {
-      x: centerX('CERTIFICATE OF REGISTRATION', 18, boldFont),
-      y: title1Y - 50,
-      size: 18,
-      font: boldFont,
-      color: rgb(0, 0, 0),
-    });
-
-    // Decorative divider - below titles with space
-    const dividerY = title1Y - 70;
-    page.drawRectangle({
-      x: 60,
-      y: dividerY,
-      width: width - 120,
-      height: 8,
-      color: blueColor,
-      opacity: 0.8,
-    });
-    page.drawRectangle({
-      x: 60,
-      y: dividerY - 2,
-      width: width - 120,
-      height: 4,
-      color: whiteColor,
-      opacity: 0.9,
-    });
-
-    // Start body text - more space below divider
-    let curY = dividerY - 50;
-    const lineGap = 28; // Adjusted for better spacing
-
-    const drawCenteredLine = (text: string, size: number, font = regularFont, color = rgb(0, 0, 0)) => {
-      page.drawText(text, {
-        x: centerX(text, size, font),
-        y: curY,
-        size,
-        font,
-        color,
-      });
-      curY -= lineGap;
-    };
-
-    // Body
-    drawCenteredLine('This is to certify that', 14);
-
-    // Name with bullet - on next line
-    const nameText = data.companyName || data.memberName || '—';
-    const nameSize = 16;
-    const nameWidth = boldFont.widthOfTextAtSize(nameText, nameSize);
-    const nameX = (width - nameWidth) / 2;
-    page.drawCircle({ x: nameX - 12, y: curY + 5, size: 5, color: blueColor });
-    page.drawText(nameText, { x: nameX, y: curY, size: nameSize, font: boldFont, color: rgb(0, 0, 0) });
-    curY -= lineGap;
-
-    drawCenteredLine('is a registered member of the KMDA', 14);
-
-    // Registration number - with small gap
-    const regBoxWidth = width - 200;
-    const regBoxX = (width - regBoxWidth) / 2;
-    page.drawRectangle({ x: regBoxX, y: curY - 8, width: regBoxWidth, height: 22, color: blueColor, opacity: 0.08 });
-    const regText = `Registration Number: ${data.certificateNumber || 'N/A'}`;
-    page.drawText(regText, { x: centerX(regText, 12, regularFont), y: curY - 2, size: 12, font: regularFont, color: blueColor });
-    curY -= lineGap;
-
-    // Issue Date
-    const doi = `Date of Issue: ${formatLongDate(data.issueDate || new Date().toISOString())}`;
-    page.drawRectangle({ x: regBoxX, y: curY - 8, width: regBoxWidth, height: 20, color: borderColor, opacity: 0.2 });
-    page.drawText(doi, { x: centerX(doi, 12, regularFont), y: curY - 2, size: 12, font: regularFont, color: rgb(0, 0, 0) });
-    curY -= lineGap;
-
-    // Expiry Date
-    const doe = `Expiry Date: ${formatLongDate(data.validUntil)}`;
-    page.drawRectangle({ x: regBoxX, y: curY - 8, width: regBoxWidth, height: 20, color: borderColor, opacity: 0.2 });
-    page.drawText(doe, { x: centerX(doe, 12, regularFont), y: curY - 2, size: 12, font: regularFont, color: rgb(0, 0, 0) });
-    curY -= lineGap;
-
-    // Paragraph - use smaller gap for lines
-    const paraGap = 18;
-    const p1 = 'This certificate confirms the validity of';
-    page.drawText(p1, { x: centerX(p1, 12, regularFont), y: curY, size: 12, font: regularFont, color: rgb(0, 0, 0) });
-    curY -= paraGap;
-    const p2 = 'membership and all associated rights and';
-    page.drawText(p2, { x: centerX(p2, 12, regularFont), y: curY, size: 12, font: regularFont, color: rgb(0, 0, 0) });
-    curY -= paraGap;
-    const p3 = 'privileges until the expiry date.';
-    page.drawText(p3, { x: centerX(p3, 12, regularFont), y: curY, size: 12, font: regularFont, color: rgb(0, 0, 0) });
-
-    // Seals - fixed positions
-    page.drawCircle({ x: 120, y: 120, size: 40, color: blueColor, opacity: 0.18 });
-    page.drawText('KMDA', { x: 120 - boldFont.widthOfTextAtSize('KMDA', 10) / 2, y: 125, size: 10, font: boldFont, color: blueColor });
-
-    page.drawCircle({ x: width - 120, y: 120, size: 40, color: borderColor, opacity: 0.28 });
-    page.drawText('SEAL', { x: width - 120 - regularFont.widthOfTextAtSize('SEAL', 8) / 2, y: 125, size: 8, font: regularFont, color: rgb(0, 0, 0) });
-
-    // Signature - fixed
-    const sigY = 100;
-    const sigLineWidth = 220;
-    const sigX = (width - sigLineWidth) / 2;
-    page.drawLine({ start: { x: sigX, y: sigY }, end: { x: sigX + sigLineWidth, y: sigY }, thickness: 1, color: rgb(0, 0, 0) });
-    page.drawText('President, KMDA', { x: centerX('President, KMDA', 12), y: sigY - 18, size: 12, font: regularFont, color: rgb(0, 0, 0) });
-    const sigDate = `Date: ${formatLongDate(data.issueDate || new Date().toISOString())}`;
-    page.drawText(sigDate, { x: centerX(sigDate, 10), y: sigY - 35, size: 10, font: regularFont, color: rgb(0.3, 0.3, 0.3) });
-
-    return await pdfDoc.save();
-  } catch (error) {
-    throw new Error(`Failed to generate PDF certificate: ${error.message}`);
+  if (!response.ok) {
+    const errorBody = await response.json();
+    console.error("Resend API Error:", errorBody);
   }
+}
+
+async function generateCertificatePDF(data: any) {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([800, 600]);
+  const { width, height } = page.getSize();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 0.98, 0.95) });
+
+  try {
+    const resp = await fetch(data.logoUrl);
+    if (resp.ok) {
+      const bytes = await resp.arrayBuffer();
+      const embeddedLogo = await pdfDoc.embedPng(bytes);
+      const logoWidth = 120;
+      const logoHeight = (embeddedLogo.height / embeddedLogo.width) * logoWidth;
+      page.drawImage(embeddedLogo, {
+        x: width / 2 - logoWidth / 2,
+        y: height - logoHeight - 40,
+        width: logoWidth,
+        height: logoHeight
+      });
+    }
+  } catch {
+    page.drawText("KMDA", {
+      x: width / 2 - 30,
+      y: height - 80,
+      size: 24,
+      font,
+      color: rgb(0, 0.4, 0.8)
+    });
+  }
+
+  const title = "Certificate of Membership";
+  const titleSize = 24;
+  const titleWidth = font.widthOfTextAtSize(title, titleSize);
+  page.drawText(title, {
+    x: width / 2 - titleWidth / 2,
+    y: height - 200,
+    size: titleSize,
+    font,
+    color: rgb(0, 0, 0)
+  });
+
+  const contentLines = [
+    "This is to certify that",
+    "",
+    data.memberName,
+    data.companyName,
+    "",
+    `from ${data.city}, ${data.district},`,
+    "",
+    "is a registered member of KMDA."
+  ];
+
+  let yPosition = height - 260;
+  const lineHeight = 22;
+
+  for (const line of contentLines) {
+    if (line.trim() === "") {
+      yPosition -= lineHeight / 2;
+      continue;
+    }
+    const lineWidth = font.widthOfTextAtSize(line, 14);
+    page.drawText(line, {
+      x: width / 2 - lineWidth / 2,
+      y: yPosition,
+      size: 14,
+      font,
+      color: rgb(0, 0, 0)
+    });
+    yPosition -= lineHeight;
+  }
+
+  page.drawText(`Certificate No: ${data.certificateNumber}`, {
+    x: 50,
+    y: 100,
+    size: 12,
+    font,
+    color: rgb(0, 0, 0)
+  });
+
+  page.drawText(`Issued: ${new Date(data.issueDate).toLocaleDateString()}`, {
+    x: 50,
+    y: 80,
+    size: 12,
+    font,
+    color: rgb(0, 0, 0)
+  });
+
+  page.drawText(`Valid Until: ${new Date(data.validUntil).toLocaleDateString()}`, {
+    x: 50,
+    y: 60,
+    size: 12,
+    font,
+    color: rgb(0, 0, 0)
+  });
+
+  page.drawLine({
+    start: { x: width / 2 - 100, y: 40 },
+    end: { x: width / 2 + 100, y: 40 },
+    thickness: 1,
+    color: rgb(0, 0, 0)
+  });
+
+  page.drawText("Authorized Signature", {
+    x: width / 2 - 50,
+    y: 25,
+    size: 10,
+    font,
+    color: rgb(0.5, 0.5, 0.5)
+  });
+
+  return await pdfDoc.save();
 }
