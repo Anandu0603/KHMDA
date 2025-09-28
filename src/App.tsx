@@ -23,7 +23,7 @@ import PaymentCancel from './pages/PaymentCancel';
 import RazorpayPayment from './pages/RazorpayPayment';
 import RenewalPage from './pages/RenewalPage';
 import ReportsPage from './pages/ReportsPage';
-import ReportsMembers from './pages/ReportsMembers';
+import ReportsRegistrations from './pages/ReportsRegistrations';
 import ReportsPayments from './pages/ReportsPayments';
 import ReportsDonations from './pages/ReportsDonations';
 import DonationPage from './pages/DonationPage';
@@ -59,7 +59,7 @@ function App() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/reports" element={<ReportsPage />} />
-                <Route path="/admin/reports/members" element={<ReportsMembers />} />
+                <Route path="/admin/reports/registrations" element={<ReportsRegistrations />} />
                 <Route path="/admin/reports/payments" element={<ReportsPayments />} />
                 <Route path="/admin/reports/donations" element={<ReportsDonations />} />
                 <Route path="/admin/member/:id" element={<AdminMemberDetails />} />

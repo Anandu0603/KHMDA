@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Member } from '../types/database';
 
-const ReportsMembers: React.FC = () => {
+const ReportsRegistrations: React.FC = () => {
   const { isAdmin, loading: authLoading } = useAuth();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -33,14 +33,14 @@ const ReportsMembers: React.FC = () => {
       if (error) throw error;
       setMembers(data || []);
     } catch (e) {
-      addToast('Failed to load members', 'error');
+      addToast('Failed to load registrations', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const exportToCsv = () => {
-    const filename = 'KMDA_Members_Report.csv';
+    const filename = 'KMDA_Registrations_Report.csv';
     const headers = ['Company Name', 'Email', 'Mobile', 'District', 'Status', 'Membership ID', 'Registration Date'];
     const rows = members.map(m => [
       m.company_name,
@@ -53,7 +53,7 @@ const ReportsMembers: React.FC = () => {
     ]);
 
     const csvRows = [
-      ['KMDA Members Report'],
+      ['KMDA Registrations Report'],
       ['Generated on:', new Date().toLocaleDateString('en-IN')],
       ['Date Range:', `${dateRange.startDate} to ${dateRange.endDate}`],
       [''],
@@ -70,7 +70,7 @@ const ReportsMembers: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    addToast('Members report exported successfully', 'success');
+    addToast('Registrations report exported successfully', 'success');
   };
 
   if (authLoading) {
@@ -115,13 +115,13 @@ const ReportsMembers: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Members</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Registrations</h2>
           </div>
           <div className="overflow-x-auto">
             {loading ? (
               <div className="p-8 text-center text-gray-600">Loading...</div>
             ) : members.length === 0 ? (
-              <div className="p-8 text-center text-gray-600">No members found for the selected period.</div>
+              <div className="p-8 text-center text-gray-600">No registrations found for the selected period.</div>
             ) : (
               <table className="w-full text-xs sm:text-sm">
                 <thead className="bg-gray-50">
@@ -153,4 +153,4 @@ const ReportsMembers: React.FC = () => {
   );
 };
 
-export default ReportsMembers;
+export default ReportsRegistrations;

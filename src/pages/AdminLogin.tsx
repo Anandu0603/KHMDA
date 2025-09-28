@@ -103,13 +103,6 @@ export default function AdminLogin() {
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 text-center">
-              <strong>Demo Credentials:</strong><br />
-              Email: admin@kmda.org<br />
-              Password: admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>

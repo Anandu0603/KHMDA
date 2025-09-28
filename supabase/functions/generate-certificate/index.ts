@@ -136,7 +136,7 @@ async function generateCertificatePDF(data: any) {
   const { width, height } = page.getSize();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 0.98, 0.95) });
+  page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1, 0.98, 0.95), borderWidth: 2, borderColor: rgb(0, 0, 0) });
 
   try {
     const resp = await fetch(data.logoUrl);
