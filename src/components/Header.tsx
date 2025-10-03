@@ -12,7 +12,7 @@ const navLinks = [
   { name: 'Committee', path: '/committee' },
   { name: 'Membership', path: '/membership' },
   { name: 'News', path: '/news' },
-  { name: 'Donate', path: '/donate' },
+  { name: 'Working Fund', path: '/donate' },
   { name: 'Contact Us', path: '/contact' },
 ];
 
