@@ -265,7 +265,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <StatCard icon={Users} title="Total Members" value={stats.total} colorClass={{bg: 'bg-blue-100', text: 'text-blue-600'}} />
+          <StatCard icon={Users} title="Total Registrations" value={stats.total} colorClass={{bg: 'bg-blue-100', text: 'text-blue-600'}} />
           <StatCard icon={Clock} title="Pending" value={stats.pending} colorClass={{bg: 'bg-yellow-100', text: 'text-yellow-600'}} />
           <StatCard icon={CheckCircle} title="Approved" value={stats.approved} colorClass={{bg: 'bg-green-100', text: 'text-green-600'}} />
           <StatCard icon={XCircle} title="Rejected" value={stats.rejected} colorClass={{bg: 'bg-red-100', text: 'text-red-600'}} />
