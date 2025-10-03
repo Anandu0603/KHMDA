@@ -1,21 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { NewsArticle } from '../types/NewsArticle'; // Assuming type is moved or defined here
 
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  imageUrl: string;
-  category: string;
-  date: Date;
-}
-
-const newsArticles: NewsArticle[] = [
+export const newsArticles: NewsArticle[] = [
   {
     id: '1',
     title: 'ആലപ്പുഴ ജില്ലാ കമ്മിറ്റി യുടെ ആഭിമുഖ്യത്തിൽ ആഗസ്ത് 15 KMDA സ്ഥാപകദിന ആഘോഷ പരിപാടി സംഘടിപ്പിച്ചു',
     excerpt: 'ആലപ്പുഴ ജില്ലാ കമ്മിറ്റി KMDA സ്ഥാപകദിനം ആഘോഷപൂർവ്വം ആചരിച്ചു. സംസ്ഥാന നേതൃത്വത്തിന്റെ സാന്നിധ്യത്തിൽ വിവിധ പരിപാടികൾ സംഘടിപ്പിച്ചു.',
-    imageUrl: '/images/asam image 2.jpg.jpg',
+    imageUrl: '/images/asam image 2.jpg',
     category: 'Association Events',
     date: new Date('2024-08-15'),
   },
@@ -23,7 +13,7 @@ const newsArticles: NewsArticle[] = [
     id: '2',
     title: 'കണ്ണൂർ ജില്ലാ കമ്മിറ്റി സംഘടിപ്പിച്ച കോമ്പീറ്റൻ്റ് പേഴ്സൺ Training program KMDA സംസ്ഥാന സിക്രട്ടറി പി.അനിൽ കുമാർ ഉദ്ഘാടനം ചെയ്യുന്നു',
     excerpt: 'കണ്ണൂർ ജില്ലയിൽ KMDA സംസ്ഥാന സിക്രട്ടറി പി.അനിൽ കുമാരുടെ ഉദ്ഘാടനത്തോടെ കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംഗ് പ്രോഗ്രാം ആരംഭിച്ചു.',
-    imageUrl: '/images/asam image 3.jpg.jpeg',
+    imageUrl: '/images/asam image 3.jpg',
     category: 'Training Programs',
     date: new Date('2024-09-01'),
   },
@@ -31,7 +21,7 @@ const newsArticles: NewsArticle[] = [
     id: '3',
     title: 'കണ്ണൂർ ജില്ലാ കമ്മിറ്റി സംഘടിപ്പിച്ച കോമ്പീറ്റൻ്റ് പേഴ്സൺ (CP)ട്രെയിനിംങ്ങ് പ്രോഗ്രാം',
     excerpt: 'കണ്ണൂർ ജില്ലാ കമ്മിറ്റി വിജയകരമായി നടത്തിയ കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംഗ് പ്രോഗ്രാം പൂർത്തിയായി.',
-    imageUrl: '/images/asam image 4.jpg.jpeg',
+    imageUrl: '/images/asam image 4.jpg',
     category: 'Training Programs',
     date: new Date('2024-09-05'),
   },
@@ -39,7 +29,7 @@ const newsArticles: NewsArticle[] = [
     id: '4',
     title: 'ഏറണാകുളം ജില്ലാ കമ്മിറ്റി സംഘടിപ്പിച്ച കോമ്പീറ്റൻ്റ് പേഴ്സൺ (CP)ട്രെയിനിംങ്ങ് പ്രോഗ്രാം',
     excerpt: 'ഏറണാകുളം ജില്ലയിൽ നടന്ന കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംഗ് പ്രോഗ്രാം വൻ വിജയം നേടി.',
-    imageUrl: '/images/asam image 5.jpg.jpeg',
+    imageUrl: '/images/asam image 5.jpg',
     category: 'Training Programs',
     date: new Date('2024-09-10'),
   },
@@ -47,7 +37,7 @@ const newsArticles: NewsArticle[] = [
     id: '5',
     title: 'ഏറണാകുളം ജില്ലാ കമ്മിറ്റി KMDA സംസ്ഥാന പ്രസിഡണ്ട് കെ.വി.എം.ഫിറോസിന് സ്വീകരണം നൽകുന്നു',
     excerpt: 'ഏറണാകുളം ജില്ലാ കമ്മിറ്റി KMDA സംസ്ഥാന പ്രസിഡണ്ട് കെ.വി.എം.ഫിറോസിന് ഭവ്യമായ സ്വീകരണം നൽകി.',
-    imageUrl: '/images/asam image 6.jpg.jpeg',
+    imageUrl: '/images/asam image 6.jpg',
     category: 'Association Events',
     date: new Date('2024-09-15'),
   },
@@ -55,7 +45,7 @@ const newsArticles: NewsArticle[] = [
     id: '6',
     title: 'KMDA സംസ്ഥാന സമ്മേളന സ്വാഗത സംഘം രൂപീകരണ യോഗം കോഴിക്കോട് വെച്ച് KVVS സംസ്ഥാന വൈസ്. പ്രസിഡണ്ട് സൂര്യ അബ്ദുൾ ഗഫൂർ ഉദ്ഘാടനം ചെയ്യുന്നു',
     excerpt: 'കോഴിക്കോട് വെച്ച് KMDA സംസ്ഥാന സമ്മേളന സ്വാഗത സംഘം രൂപീകരണ യോഗം നടന്നു. KVVS സംസ്ഥാന വൈസ് പ്രസിഡണ്ട് സൂര്യ അബ്ദുൾ ഗഫൂർ ഉദ്ഘാടനം ചെയ്തു.',
-    imageUrl: '/images/asam image 7.jpg.jpeg',
+    imageUrl: '/images/asam image 7.jpg',
     category: 'Association Events',
     date: new Date('2024-09-20'),
   },
@@ -63,7 +53,7 @@ const newsArticles: NewsArticle[] = [
     id: '7',
     title: 'കോഴിക്കോട് ജില്ലാ കമ്മിറ്റി സംഘടിപ്പിച്ച കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംങ്ങ് പ്രോഗ്രാം',
     excerpt: 'കോഴിക്കോട് ജില്ലാ കമ്മിറ്റി വിജയകരമായി നടത്തിയ കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംഗ് പ്രോഗ്രാം പൂർത്തിയായി.',
-    imageUrl: '/images/asam image 8.jpg.jpeg',
+    imageUrl: '/images/asam image 8.jpg',
     category: 'Training Programs',
     date: new Date('2024-09-25'),
   },
@@ -71,7 +61,7 @@ const newsArticles: NewsArticle[] = [
     id: '8',
     title: 'കാസർഗോഡ് ജില്ലാ കമ്മിറ്റി സംഘടിപ്പിച്ച കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിങ്ങ് പ്രോഗ്രാം മഞ്ചേശ്വരം ബഹു.എം.എൽ.എ ശ്രീ.എ.കെ.എം.അഷ്റഫ് ഉദ്ഘാടനം ചെയ്യുന്നു',
     excerpt: 'കാസർഗോഡ് ജില്ലയിൽ മഞ്ചേശ്വരം ബഹു.എം.എൽ.എ ശ്രീ.എ.കെ.എം.അഷ്റഫിന്റെ ഉദ്ഘാടനത്തോടെ കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംഗ് പ്രോഗ്രാം ആരംഭിച്ചു.',
-    imageUrl: '/images/asam image 10.jpg.jpeg',
+    imageUrl: '/images/asam image 10.jpg',
     category: 'Training Programs',
     date: new Date('2024-10-01'),
   },
@@ -79,7 +69,7 @@ const newsArticles: NewsArticle[] = [
     id: '9',
     title: 'കാസർഗോഡ് ജില്ലാ ട്രെയിനിങ്ങ് പ്രോഗ്രാം',
     excerpt: 'കാസർഗോഡ് ജില്ലയിൽ നടന്ന ട്രെയിനിങ്ങ് പ്രോഗ്രാം വൻ വിജയം നേടി.',
-    imageUrl: '/images/asam image 11.jpg.jpeg',
+    imageUrl: '/images/asam image 11.jpg',
     category: 'Training Programs',
     date: new Date('2024-10-05'),
   },
@@ -87,15 +77,15 @@ const newsArticles: NewsArticle[] = [
     id: '10',
     title: 'തിരുവനന്തപുരം ജില്ലാ കമ്മിറ്റി സംഘടിപ്പിച്ച കോമ്പീറ്റൻ്റ് പേഴ്സൺ Training program KMDA സംസ്ഥാന സിക്രട്ടറി പി.അനിൽകുമാർ ഉദ്ഘാടനം ചെയ്യുന്നു',
     excerpt: 'തിരുവനന്തപുരം ജില്ലയിൽ KMDA സംസ്ഥാന സിക്രട്ടറി പി.അനിൽ കുമാരുടെ ഉദ്ഘാടനത്തോടെ കോമ്പീറ്റൻ്റ് പേഴ്സൺ ട്രെയിനിംഗ് പ്രോഗ്രാം ആരംഭിച്ചു.',
-    imageUrl: '/images/asam image 12.jpg.jpeg',
+    imageUrl: '/images/asam image 12.jpg',
     category: 'Training Programs',
     date: new Date('2024-10-10'),
   },
   {
     id: '11',
     title: 'തിരുവനന്തപുരം ജില്ലയിലെ ട്രെയിനിങ്ങ് പ്രോഗ്രാം',
-    excerpt: 'തിരുവനന്തപുരം ജില്ലയിൽ നടന്ന ട്രെയിനിംഗ് പ്രോഗ്രാം വിജയകരമായി പൂർത്തിയായി.',
-    imageUrl: '/images/asam image 13.jpg.jpeg',
+    excerpt: 'തിരുവനന്തപുരം ജില്ലയിൽ നടന്ന ട്രെയിനിങ്ങ് പ്രോഗ്രാം വിജയകരമായി പൂർത്തിയായി.',
+    imageUrl: '/images/asam image 13.jpg',
     category: 'Training Programs',
     date: new Date('2024-10-15'),
   },
@@ -103,7 +93,7 @@ const newsArticles: NewsArticle[] = [
     id: '12',
     title: 'ബഹു.ആരോഗ്യവകുപ്പ് മന്ത്രി ശ്രീമതി. വീണാ ജോർജ് ന് നിവേദനം നൽകുന്നു',
     excerpt: 'ബഹു.ആരോഗ്യവകുപ്പ് മന്ത്രി ശ്രീമതി. വീണാ ജോർജ് KMDA ന്റെ നിവേദനം സ്വീകരിച്ചു.',
-    imageUrl: '/images/asam image 14.jpg.jpeg',
+    imageUrl: '/images/asam image 14.jpg',
     category: 'Industry Updates',
     date: new Date('2024-10-20'),
   },
@@ -111,89 +101,8 @@ const newsArticles: NewsArticle[] = [
     id: '13',
     title: 'ആഗസ്റ്റ് 15 സ്ഥാപക ദിനം അവകാശ സംരക്ഷണ ദിനമായി ആചരിച്ചു',
     excerpt: 'KMDA സ്ഥാപകദിനം അവകാശ സംരക്ഷണ ദിനമായി ആചരിച്ച് വിവിധ പരിപാടികൾ നടത്തി.',
-    imageUrl: '/images/asam image 15.jpg.jpeg',
+    imageUrl: '/images/asam image 15.jpg',
     category: 'Association Events',
     date: new Date('2024-08-15'),
   },
 ];
-
-const NewsPage: React.FC = () => {
-  const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [featuredArticle, setFeaturedArticle] = useState<NewsArticle | null>(null);
-
-  useEffect(() => {
-    // Sort news articles by date (newest first)
-    const sortedNews = [...newsArticles].sort((a, b) => b.date.getTime() - a.date.getTime());
-    setFeaturedArticle(sortedNews[0]);
-    setArticles(sortedNews.slice(1));
-  }, []);
-
-  return (
-    <div className="bg-white py-16 sm:py-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            News & Announcements
-          </h1>
-          <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
-            Stay informed with the latest updates from KMDA and the medical distribution industry.
-          </p>
-        </div>
-
-        {/* Featured Article */}
-        {featuredArticle && (
-          <div className="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-gray-50 rounded-lg p-8">
-            <div className="w-full">
-              <img src={featuredArticle.imageUrl} alt={featuredArticle.title} className="rounded-lg shadow-lg object-cover w-full h-80" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-emerald-700 uppercase">{featuredArticle.category}</p>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900">
-                {featuredArticle.title}
-              </h2>
-              <div className="mt-3 flex items-center text-sm text-gray-500">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>{featuredArticle.date.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              </div>
-              <p className="mt-4 text-lg text-gray-600">{featuredArticle.excerpt}</p>
-              <a href="#" className="mt-6 inline-flex items-center font-semibold text-emerald-700 hover:text-emerald-800">
-                Read More <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* Article Grid */}
-        <div className="mt-16 grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
-            <div key={article.id} className="flex flex-col rounded-lg shadow-lg overflow-hidden">
-              <div className="flex-shrink-0">
-                <img className="h-48 w-full object-cover" src={article.imageUrl} alt={article.title} />
-              </div>
-              <div className="flex-1 bg-white p-6 flex flex-col justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-emerald-600">
-                    <a href="#" className="hover:underline">{article.category}</a>
-                  </p>
-                  <a href="#" className="block mt-2">
-                    <p className="text-xl font-semibold text-gray-900">{article.title}</p>
-                    <p className="mt-3 text-base text-gray-500">{article.excerpt.substring(0, 100)}...</p>
-                  </a>
-                </div>
-                <div className="mt-6 flex items-center">
-                  <div className="text-sm text-gray-500">
-                    <time dateTime={article.date.toISOString()}>
-                      {article.date.toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })}
-                    </time>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default NewsPage;

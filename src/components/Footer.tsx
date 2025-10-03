@@ -12,12 +12,16 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* About Section */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center space-x-3 mb-3 sm:mb-4">
-              <Logo className="w-10 h-10" />
-              <h2 className="text-lg sm:text-xl font-bold">KMDA</h2>
+            <div className="flex flex-col items-center mb-3 sm:mb-4">
+              <Logo className="w-16 h-16 sm:w-20 sm:h-20" />
+              <h2 className="text-base sm:text-lg font-bold text-center mt-2">Kerala Medical Distributors Association</h2>
             </div>
-            <p className="text-gray-400 text-xs sm:text-sm">
-              Kerala Medical Distributors Association, dedicated to empowering medical distributors across the state.
+            <div className="text-xs sm:text-sm text-gray-400 text-center mb-2">
+              <p>Reg No TVM/C-149/2023</p>
+              <p>Affiliated to Kerala Vyapari Vyavasaya Samithi</p>
+            </div>
+            <p className="text-gray-400 text-xs sm:text-sm text-center">
+              Dedicated to empowering medical distributors across the state.
             </p>
           </div>
 
