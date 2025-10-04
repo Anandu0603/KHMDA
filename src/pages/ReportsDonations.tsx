@@ -25,16 +25,37 @@ const ReportsDonations: React.FC = () => {
   const fetchDonations = async () => {
     setLoading(true);
     try {
+      console.log('🔄 Fetching donations with filters:', {
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
+
+      // ✅ REMOVED status filter to show ALL donations
       const { data, error } = await supabase
         .from('donations')
         .select('*')
-        .eq('status', 'completed')
+        // .eq('status', 'completed')  // ← COMMENTED OUT THIS LINE
         .gte('created_at', dateRange.startDate)
         .lte('created_at', dateRange.endDate + 'T23:59:59')
         .order('created_at', { ascending: false });
+
       if (error) throw error;
+      
+      console.log('✅ Raw donations data:', data);
+      console.log('📊 Total donations found:', data?.length);
+      
+      // Log status counts for debugging
+      if (data && data.length > 0) {
+        const statusCounts = data.reduce((acc: any, donation) => {
+          acc[donation.status] = (acc[donation.status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('📈 Donation status counts:', statusCounts);
+      }
+      
       setDonations(data || []);
     } catch (e) {
+      console.error('❌ Error fetching donations:', e);
       addToast('Failed to load donations', 'error');
     } finally {
       setLoading(false);
@@ -43,14 +64,15 @@ const ReportsDonations: React.FC = () => {
 
   const exportToCsv = () => {
     const filename = 'KMDA_Donations_Report.csv';
-    const headers = ['Donor Name', 'Email', 'Phone', 'Amount', 'Remarks', 'Payment Date'];
+    const headers = ['Donor Name', 'Email', 'Phone', 'Amount', 'Remarks', 'Payment Date', 'Status'];
     const rows = donations.map(d => [
       d.donor_name || '',
       d.email || '',
       d.phone || '',
       d.amount,
       d.remarks || '',
-      new Date(d.created_at).toLocaleDateString('en-IN')
+      new Date(d.created_at).toLocaleDateString('en-IN'),
+      d.status || 'unknown'
     ]);
 
     const csvRows = [
@@ -117,17 +139,21 @@ const ReportsDonations: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Donations</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Showing {donations.length} donations • 
+              <span className="ml-2">Open browser console (F12) for detailed debug info</span>
+            </p>
           </div>
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-8 text-center text-gray-600">Loading...</div>
+              <div className="p-8 text-center text-gray-600">Loading donations...</div>
             ) : donations.length === 0 ? (
               <div className="p-8 text-center text-gray-600">No donations found for the selected period.</div>
             ) : (
               <table className="w-full text-xs sm:text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {['Donor Name', 'Email', 'Phone', 'Amount', 'Remarks', 'Payment Date'].map(h => (
+                    {['Donor Name', 'Email', 'Phone', 'Amount', 'Remarks', 'Payment Date', 'Status'].map(h => (
                       <th key={h} className="px-2 sm:px-4 py-2 text-left font-medium text-gray-500 uppercase">{h}</th>
                     ))}
                   </tr>
@@ -141,6 +167,16 @@ const ReportsDonations: React.FC = () => {
                       <td className="px-2 sm:px-4 py-2 text-gray-700">₹{(d.amount || 0).toLocaleString()}</td>
                       <td className="px-2 sm:px-4 py-2 text-gray-700">{d.remarks || '-'}</td>
                       <td className="px-2 sm:px-4 py-2 text-gray-700">{new Date(d.created_at).toLocaleDateString('en-IN')}</td>
+                      <td className="px-2 sm:px-4 py-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          d.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          d.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          d.status === 'failed' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {d.status || 'unknown'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
